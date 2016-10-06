@@ -28,30 +28,16 @@
 #include "stm32f0x_tim.h"
 #include "uart.h"
 #include "hard.h"
-#include "lcd.h"
 
 #include "core_cm0.h"
 #include "adc.h"
 #include "flash_program.h"
 #include "main_menu.h"
 #include "synchro.h"
-#include "dmx_transceiver.h"
-#include "standalone.h"
-#include "grouped.h"
-#include "networked.h"
 
-#ifdef USE_RM04_WIFI
-#include "HLK_RM04.h"
-#endif
-#ifdef USE_ESP_WIFI
-#include "ESP8266.h"
-#endif
+
 #include "tcp_transceiver.h"
 
-//para MQTT
-#include "MQTT_SPWF_interface.h"
-#include "MQTTClient.h"
-#include "IBM_Bluemix_Config.h"
 
 //--- VARIABLES EXTERNAS ---//
 volatile unsigned char timer_1seg = 0;
@@ -72,14 +58,6 @@ volatile unsigned char rx2buff[SIZEOF_DATA];
 //volatile unsigned char *pspi_rx;
 //volatile unsigned char spi_bytes_left = 0;
 
-// ------- Externals del DMX -------
-volatile unsigned char Packet_Detected_Flag;
-volatile unsigned char DMX_packet_flag;
-volatile unsigned char RDM_packet_flag;
-volatile unsigned char dmx_receive_flag = 0;
-volatile unsigned short DMX_channel_received = 0;
-volatile unsigned short DMX_channel_selected = 1;
-volatile unsigned char DMX_channel_quantity = 4;
 
 volatile unsigned char data1[SIZEOF_DATA1];
 //static unsigned char data_back[10];
@@ -103,47 +81,6 @@ volatile unsigned short take_temp_sample = 0;
 volatile unsigned short minutes = 0;
 volatile unsigned char timer_wifi_bright = 0;
 
-// ------- Externals de los modos -------
-StandAlone_Typedef const StandAloneStruct_constant =
-//StandAlone_Typedef __attribute__ ((section("memParams"))) const StandAloneStruct_constant =
-		{
-				.move_sensor_enable = 1,
-				.ldr_enable = 0,
-				.ldr_value = 100,
-				.max_dimmer_value_percent = 100,
-				.max_dimmer_value_dmx = 255,
-				.min_dimmer_value_percent = 1,
-				.min_dimmer_value_dmx = MIN_DIMMING,
-				.power_up_timer_value = 3000,
-				.dimming_up_timer_value = 3000
-		};
-
-Grouped_Typedef const GroupedStruct_constant =
-//Grouped_Typedef __attribute__ ((section("memParams1"))) const GroupedStruct_constant =
-		{
-				//parte master igual a StandAlone
-				.move_sensor_enable = 1,
-				.ldr_enable = 0,
-				.ldr_value = 100,
-				.max_dimmer_value_percent = 100,
-				.max_dimmer_value_dmx = 255,
-				.min_dimmer_value_percent = 1,
-				.min_dimmer_value_dmx = MIN_DIMMING,
-				.power_up_timer_value = 3000,
-				.dimming_up_timer_value = 3000,
-				//parte slave
-				.grouped_mode = GROUPED_MODE_SLAVE,
-				.grouped_dmx_channel = GROUPED_INITIAL_CHANNEL
-
-		};
-
-Networked_Typedef const NetworkedStruct_constant =
-//Networked_Typedef __attribute__ ((section("memParams2"))) const NetworkedStruct_constant =
-		{
-				//parte slave,
-				.networked_dmx_channel = NETWORKED_INITIAL_CHANNEL
-
-		};
 
 unsigned char saved_mode;
 
@@ -218,19 +155,6 @@ unsigned char vd4 [LARGO_F + 1];
 #define LOOK_FOR_MARK	2
 #define LOOK_FOR_START	3
 
-/* MQTT. Private variables ---------------------------------------------------------*/
-unsigned char MQTT_read_buf[512];
-unsigned char MQTT_write_buf[128];
-Network  n;
-Client  c;
-MQTTMessage  MQTT_msg;
-uint8_t url_ibm[80];
-MQTT_vars mqtt_ibm_setup;
-ibm_mode_t ibm_mode;  // EQ. Move this to IBM struct.
-MQTTPacket_connectData options = MQTTPacket_connectData_initializer;
-uint8_t json_buffer[512];
-void prepare_json_pkt (uint8_t * buffer);
-void Config_MQTT_Mosquitto ( MQTT_vars *);
 
 
 //--- FUNCIONES DEL MODULO ---//
@@ -310,81 +234,42 @@ int main(void)
 	}
 
 
-#if ((defined USE_ESP_WIFI) || (defined USE_HLK_WIFI))
-	WRST_OFF;
-	Wait_ms(2);
-	WRST_ON;
-#endif
-
-#ifdef WIFI_TO_CEL_PHONE_PROGRAM
-	RELAY_ON;
-#endif
-
 	//ADC Configuration
-	AdcConfig();
+//	AdcConfig();
 
 	//TIM Configuration.
 	TIM_3_Init();
-	TIM_14_Init();
-	TIM_16_Init();		//para OneShoot() cuando funciona en modo master
-	TIM_17_Init();		//lo uso para el ADC de Igrid
+//	TIM_14_Init();
+//	TIM_16_Init();		//para OneShoot() cuando funciona en modo master
+//	TIM_17_Init();		//lo uso para el ADC de Igrid
 
 	//--- PRUEBA DISPLAY LCD ---
-	EXTIOff ();
+//	EXTIOff ();
 
-	LCDInit();
-	LED_ON;
+	while (1)
+	{
+		if (RELAY)
+		{
+			RELAY_OFF;
+			LED_OFF;
+		}
+		else
+		{
+			RELAY_ON;
+			LED_ON;
+		}
+
+		for (i = 0; i < 255; i++)
+		{
+			Update_TIM3_CH1 (i);
+			Wait_ms (10);
+		}
+	}
+
 
 	//--- Welcome code ---//
-	Lcd_Command(CLEAR);
-	Wait_ms(100);
-	Lcd_Command(CURSOR_OFF);
-	Wait_ms(100);
-	Lcd_Command(BLINK_OFF);
-	Wait_ms(100);
-	CTRL_BKL_ON;
-
-	//while (FuncShowBlink ((const char *) "Kirno Technology", (const char *) " WiFi Test V1.0 ", 2, BLINK_NO) != RESP_FINISH);
-	while (FuncShowBlink ((const char *) "  PLANOLUX LLC  ", (const char *) "  Smart Driver  ", 2, BLINK_NO) != RESP_FINISH);
 	LED_OFF;
 
-	//----- Prueba switches ---------//
-//	while (1)
-//	{
-//		if (CheckS1())
-//		{
-//			LCD_1ER_RENGLON;
-//			LCDTransmitStr((const char *) "S1 -> ON        ");
-//			i = 1;
-//		}
-//		else if (i == 1)
-//		{
-//			i = 0;
-//			LCD_1ER_RENGLON;
-//			LCDTransmitStr((const char *) "S1 -> OFF       ");
-//		}
-//
-//		if (CheckS2())
-//		{
-//			LCD_2DO_RENGLON;
-//			LCDTransmitStr((const char *) "S2 -> ON        ");
-//			ii = 1;
-//		}
-//		else if (ii == 1)
-//		{
-//			ii = 0;
-//			LCD_2DO_RENGLON;
-//			LCDTransmitStr((const char *) "S2 -> OFF       ");
-//		}
-//
-//		UpdateSwitches();
-//	}
-
-	//DE PRODUCCION Y PARA PRUEBAS EN DMX
-
-	//Packet_Detected_Flag = 0;
-	//DMX_channel_selected = 1;
-	//DMX_channel_quantity = 4;
 	USART1Config();
 #ifdef VER_1_3
 	USART2Config();
@@ -394,18 +279,8 @@ int main(void)
 #ifdef VER_1_2
 	Update_TIM3_CH2 (255);
 #endif
-	DMX_TX_PIN_OFF;
 
-	//---------- Prueba DMX_INPUT con y sin INT --------//
-//	EXTIOn();
-//	while (1)
-//	{
-////		if (DMX_INPUT)
-////			LED_ON;
-////		else
-////			LED_OFF;
-//	}
-	//---------- Fin Prueba DMX_INPUT con y sin INT ----//
+
 
 
 	//---------- Prueba USART --------//
@@ -431,88 +306,7 @@ int main(void)
 
     //---------- Fin Prueba USART --------//
 
-    //---------- Prueba Recibir DMX Pckts --------//
-//	EXTIOn ();
-//	DMX_channel_quantity = 1;
-//	DMX_channel_selected = 6;
-//	DMX_Ena();
-//
-//	while (1)
-//	{
-//		if (DMX_packet_flag)
-//		{
-//			//llego un paquete DMX
-//			DMX_packet_flag = 0;
-//
-//			//en data tengo la info
-//			Update_TIM3_CH1 (data[1]);
-//
-//			//prendo relay
-//			if (data[1] > 20)
-//			{
-//				if (!RELAY)
-//					RELAY_ON;
-//			}
-//			else if (data[1] < 10)
-//			{
-//				if (RELAY)
-//					RELAY_OFF;
-//			}
-//
-//		}
-//		UpdatePackets();
-//
-//	}
-	//---------- Fin Prueba Recibir DMX Pckts --------//
 
-    //---------- Prueba Enviar DMX Pckts --------//
-//	EXTIOn ();
-//	DMX_channel_quantity = 1;
-//	DMX_channel_selected = 1;
-//	DMX_Ena();
-//	i = 0;
-//
-//	while (1)
-//	{
-//		if (!timer_standby)
-//		{
-//			timer_standby = 100;
-//			data1[1] = i;
-//			data1[2] = i;
-//			data1[3] = i;
-//			data1[4] = i;
-//			data1[5] = i;
-//			data1[6] = i;
-//			if (i < 255)
-//				i++;
-//			else
-//				i = 0;
-//
-//			SendDMXPacket (PCKT_INIT);
-//			show_ldr++;
-//		}
-//
-//		if (DMX_packet_flag)
-//		{
-//			//llego un paquete DMX
-//			DMX_packet_flag = 0;
-//
-//			//en data tengo la info
-//			Update_TIM3_CH1 (data[1]);
-//		}
-//
-//		if (show_ldr > 3)
-//		{
-//			show_ldr = 0;
-//			LCD_1ER_RENGLON;
-//			LCDTransmitStr(s_blank_line);
-//			sprintf (s_lcd, "LDR: %04i", GetLDR());
-//			LCD_1ER_RENGLON;
-//			LCDTransmitStr(s_lcd);
-//		}
-//		UpdatePackets();
-//	}
-	//---------- Fin Prueba Recibir DMX Pckts --------//
 
 	//---------- Prueba Conexiones ESP8266 to MQTT BROKER (Mosquitto) ---------//
 #ifdef WIFI_TO_MQTT_BROKER
@@ -1328,37 +1122,6 @@ int main(void)
 //--- End of Main ---//
 
 
-void UpdatePackets (void)
-{
-	if (Packet_Detected_Flag)
-	{
-		if (data[0] == 0x00)
-			DMX_packet_flag = 1;
-
-		if (data[0] == 0xCC)
-			RDM_packet_flag = 1;
-
-		Packet_Detected_Flag = 0;
-	}
-}
-
-
-void Config_MQTT_Mosquitto ( MQTT_vars *mqtt_ibm_setup)
-{
-    strcpy((char*)mqtt_ibm_setup->pub_topic, "iot-2/evt/status/fmt/json");
-    strcpy((char*)mqtt_ibm_setup->sub_topic, "");
-    strcpy((char*)mqtt_ibm_setup->clientid,"d:quickstart:nucleo:");
-    //strcat((char*)mqtt_ibm_setup->clientid,(char *)macadd);
-    mqtt_ibm_setup->qos = QOS0;
-    strcpy((char*)mqtt_ibm_setup->username,"");
-    strcpy((char*)mqtt_ibm_setup->password,"");
-    strcpy((char*)mqtt_ibm_setup->hostname,"quickstart.messaging.internetofthings.ibmcloud.com");
-    strcpy((char*)mqtt_ibm_setup->device_type,"");
-    strcpy((char*)mqtt_ibm_setup->org_id,"");
-    mqtt_ibm_setup->port = 8883; //TLS
-    mqtt_ibm_setup->protocol = 's'; // TLS no certificates
-
-}
 
 
 void prepare_json_pkt (uint8_t * buffer)
@@ -1393,96 +1156,96 @@ void prepare_json_pkt (uint8_t * buffer)
       return;
 }
 
-void EXTI4_15_IRQHandler(void)
-{
-	unsigned short aux;
-
-//--- SOLO PRUEBA DE INTERRUPCIONES ---//
-//	if (DMX_INPUT)
-//		LED_ON;
-//	else
-//		LED_OFF;
+//void EXTI4_15_IRQHandler(void)
+//{
+//	unsigned short aux;
 //
-//	EXTI->PR |= 0x0100;
-
-	if(EXTI->PR & 0x0100)	//Line8
-	{
-
-		//si no esta con el USART detecta el flanco	PONER TIMEOUT ACA?????
-		if ((dmx_receive_flag == 0) || (dmx_timeout_timer == 0))
-		//if (dmx_receive_flag == 0)
-		{
-			switch (signal_state)
-			{
-				case IDLE:
-					if (!(DMX_INPUT))
-					{
-						//Activo timer en Falling.
-						TIM14->CNT = 0;
-						TIM14->CR1 |= 0x0001;
-						signal_state++;
-					}
-					break;
-
-				case LOOK_FOR_BREAK:
-					if (DMX_INPUT)
-					{
-						//Desactivo timer en Rising.
-						aux = TIM14->CNT;
-
-						//reviso BREAK
-						//if (((tim_counter_65ms) || (aux > 88)) && (tim_counter_65ms <= 20))
-						if ((aux > 87) && (aux < 210))	//Consola STARLET 6
-						//if ((aux > 87) && (aux < 2000))		//Consola marca CODE tiene break 1.88ms
-						{
-							LED_ON;
-							//Activo timer para ver MARK.
-							//TIM2->CNT = 0;
-							//TIM2->CR1 |= 0x0001;
-
-							signal_state++;
-							//tengo el break, activo el puerto serie
-							DMX_channel_received = 0;
-							//dmx_receive_flag = 1;
-
-							dmx_timeout_timer = DMX_TIMEOUT;		//activo el timer cuando prendo el puerto serie
-							//USARTx_RX_ENA;
-						}
-						else	//falso disparo
-							signal_state = IDLE;
-					}
-					else	//falso disparo
-						signal_state = IDLE;
-
-					TIM14->CR1 &= 0xFFFE;
-					break;
-
-				case LOOK_FOR_MARK:
-					if ((!(DMX_INPUT)) && (dmx_timeout_timer))	//termino Mark after break
-					{
-						//ya tenia el serie habilitado
-						//if ((aux > 7) && (aux < 12))
-						dmx_receive_flag = 1;
-					}
-					else	//falso disparo
-					{
-						//termine por timeout
-						dmx_receive_flag = 0;
-						//USARTx_RX_DISA;
-					}
-					signal_state = IDLE;
-					LED_OFF;
-					break;
-
-				default:
-					signal_state = IDLE;
-					break;
-			}
-		}
-
-		EXTI->PR |= 0x0100;
-	}
-}
+////--- SOLO PRUEBA DE INTERRUPCIONES ---//
+////	if (DMX_INPUT)
+////		LED_ON;
+////	else
+////		LED_OFF;
+////
+////	EXTI->PR |= 0x0100;
+//
+//	if(EXTI->PR & 0x0100)	//Line8
+//	{
+//
+//		//si no esta con el USART detecta el flanco	PONER TIMEOUT ACA?????
+//		if ((dmx_receive_flag == 0) || (dmx_timeout_timer == 0))
+//		//if (dmx_receive_flag == 0)
+//		{
+//			switch (signal_state)
+//			{
+//				case IDLE:
+//					if (!(DMX_INPUT))
+//					{
+//						//Activo timer en Falling.
+//						TIM14->CNT = 0;
+//						TIM14->CR1 |= 0x0001;
+//						signal_state++;
+//					}
+//					break;
+//
+//				case LOOK_FOR_BREAK:
+//					if (DMX_INPUT)
+//					{
+//						//Desactivo timer en Rising.
+//						aux = TIM14->CNT;
+//
+//						//reviso BREAK
+//						//if (((tim_counter_65ms) || (aux > 88)) && (tim_counter_65ms <= 20))
+//						if ((aux > 87) && (aux < 210))	//Consola STARLET 6
+//						//if ((aux > 87) && (aux < 2000))		//Consola marca CODE tiene break 1.88ms
+//						{
+//							LED_ON;
+//							//Activo timer para ver MARK.
+//							//TIM2->CNT = 0;
+//							//TIM2->CR1 |= 0x0001;
+//
+//							signal_state++;
+//							//tengo el break, activo el puerto serie
+//							DMX_channel_received = 0;
+//							//dmx_receive_flag = 1;
+//
+//							dmx_timeout_timer = DMX_TIMEOUT;		//activo el timer cuando prendo el puerto serie
+//							//USARTx_RX_ENA;
+//						}
+//						else	//falso disparo
+//							signal_state = IDLE;
+//					}
+//					else	//falso disparo
+//						signal_state = IDLE;
+//
+//					TIM14->CR1 &= 0xFFFE;
+//					break;
+//
+//				case LOOK_FOR_MARK:
+//					if ((!(DMX_INPUT)) && (dmx_timeout_timer))	//termino Mark after break
+//					{
+//						//ya tenia el serie habilitado
+//						//if ((aux > 7) && (aux < 12))
+//						dmx_receive_flag = 1;
+//					}
+//					else	//falso disparo
+//					{
+//						//termine por timeout
+//						dmx_receive_flag = 0;
+//						//USARTx_RX_DISA;
+//					}
+//					signal_state = IDLE;
+//					LED_OFF;
+//					break;
+//
+//				default:
+//					signal_state = IDLE;
+//					break;
+//			}
+//		}
+//
+//		EXTI->PR |= 0x0100;
+//	}
+//}
 
 void TimingDelay_Decrement(void)
 {

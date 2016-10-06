@@ -113,14 +113,7 @@ SRC += .\src\stm32f0x_tim.c
 SRC += .\src\adc.c
 SRC += .\src\uart.c
 SRC += .\src\flash_program.c
-SRC += .\src\lcd.c
 SRC += .\src\synchro.c
-SRC += .\src\dmx_transceiver.c
-SRC += .\src\hard.c
-SRC += .\src\main_menu.c
-SRC += .\src\standalone.c
-SRC += .\src\grouped.c
-SRC += .\src\networked.c
 SRC += .\src\tcp_transceiver.c
 
 ## RDM libraries

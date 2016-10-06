@@ -20,7 +20,6 @@
 #include "uart.h"
 #include "hard.h"
 
-#include "dmx_transceiver.h"
 
 //--- VARIABLES EXTERNAS ---//
 extern volatile unsigned char timer_1seg;
@@ -109,7 +108,7 @@ void TIM_3_Init (void)
 	//Configuracion del timer.
 	TIM3->CR1 = 0x00;		//clk int / 1; upcounting
 	TIM3->CR2 = 0x00;		//igual al reset
-#ifdef VER_1_3
+#ifdef VER_1_0
 //	TIM3->CCMR2 = 0x7070;			//CH4 y CH3 output PWM mode 2
 	TIM3->CCMR1 = 0x0060;			//CH1 PWM mode 2
 	TIM3->CCMR2 = 0x0000;			//
@@ -137,33 +136,6 @@ void TIM_3_Init (void)
 	//GPIOB->AFR[0] = 0x00000011;	//PB1 -> AF1; PB0 -> AF1
 #endif
 
-#ifdef VER_1_2
-//	TIM3->CCMR2 = 0x7070;			//CH4 y CH3 output PWM mode 2
-	TIM3->CCMR1 = 0x6060;			//CH1 CH2 PWM mode 2
-	TIM3->CCMR2 = 0x0000;			//
-	TIM3->CCER |= TIM_CCER_CC1E | TIM_CCER_CC2E;	//CH1 enable on pin
-	TIM3->ARR = 255;
-	//TIM3->ARR = 1023;		//para probar parte baja de placa mosfet (comparar con placa china)
-	TIM3->CNT = 0;
-	//TIM3->PSC = 0;
-	TIM3->PSC = 11;
-	//TIM3->EGR = TIM_EGR_UG;
-
-	// Enable timer ver UDIS
-	//TIM3->DIER |= TIM_DIER_UIE;
-	TIM3->CR1 |= TIM_CR1_CEN;
-
-	//Timer sin Int
-	//NVIC_InitStructure.NVIC_IRQChannel = TIM3_IRQn;
-	//NVIC_InitStructure.NVIC_IRQChannelPriority = 5;
-	//NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE;
-	//NVIC_Init(&NVIC_InitStructure);
-
-	//Configuracion Pines
-	//Alternate Fuction
-	GPIOA->AFR[0] = 0x11000000;	//PA7 -> AF1; PA6 -> AF1
-	//GPIOB->AFR[0] = 0x00000011;	//PB1 -> AF1; PB0 -> AF1
-#endif
 }
 
 void TIM_6_Init (void)
@@ -221,7 +193,7 @@ void TIM_14_Init (void)
 
 void TIM16_IRQHandler (void)	//es one shoot
 {
-	SendDMXPacket(PCKT_UPDATE);
+	//SendDMXPacket(PCKT_UPDATE);
 
 	if (TIM16->SR & 0x01)
 		//bajar flag

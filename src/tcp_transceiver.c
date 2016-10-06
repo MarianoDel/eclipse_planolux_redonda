@@ -12,7 +12,7 @@
 #include "main_menu.h"
 #include "ESP8266.h"
 #include "uart.h"
-#include "lcd.h"
+
 
 
 
@@ -140,8 +140,8 @@ void TCPProcess (void)
 			{
 				//termino de enviar limpio buffer
 				*(ptcp+1) = 0;
-				LCD_2DO_RENGLON;
-				LCDTransmitStr((char *) (const char *) "Sended tcp ok   ");
+//				LCD_2DO_RENGLON;
+//				LCDTransmitStr((char *) (const char *) "Sended tcp ok   ");
 				tcp_tx_state = TCP_TX_IDLE;
 			}
 
@@ -150,8 +150,8 @@ void TCPProcess (void)
 				//no encontro el SEND OK  limpio buffer
 				//TODO: ver despues si no debo intentar un par de veces mas antes de descartar
 				*(ptcp+1) = 0;
-				LCD_2DO_RENGLON;
-				LCDTransmitStr((char *) (const char *) "Error on tcp tx ");
+//				LCD_2DO_RENGLON;
+//				LCDTransmitStr((char *) (const char *) "Error on tcp tx ");
 				tcp_tx_state = TCP_TX_IDLE;
 			}
 
@@ -160,8 +160,8 @@ void TCPProcess (void)
 				//no pudo enviar  limpio buffer
 				//TODO: ver despues si no debo intentar un par de veces mas antes de descartar
 				*(ptcp+1) = 0;
-				LCD_2DO_RENGLON;
-				LCDTransmitStr((char *) (const char *) "Timeout tcp tx  ");
+//				LCD_2DO_RENGLON;
+//				LCDTransmitStr((char *) (const char *) "Timeout tcp tx  ");
 				tcp_tx_state = TCP_TX_IDLE;
 			}
 			break;
