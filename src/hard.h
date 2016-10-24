@@ -182,11 +182,11 @@ typedef enum {
 
 
 // ------- de los switches -------
-void UpdateSwitches (void);
-unsigned char CheckS1 (void);
-unsigned char CheckS2 (void);
-void UpdateACSwitch (void);
-unsigned char CheckACSw (void);
+//void UpdateSwitches (void);
+//unsigned char CheckS1 (void);
+//unsigned char CheckS2 (void);
+//void UpdateACSwitch (void);
+//unsigned char CheckACSw (void);
 
 
 #endif /* HARD_H_ */
