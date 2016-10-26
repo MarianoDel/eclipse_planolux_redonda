@@ -120,14 +120,16 @@ SRC += .\src\tcp_transceiver.c
 ##SRC += .\src\rdm_util.c
 
 ## MQTT libraries
-##SRC += .\src\mqtt_wifi_interface.c
-##SRC += .\MQTT-Paho\MQTTClient-C\src\MQTTClient.c
-##SRC += .\MQTT-Paho\MQTTPacket\src\MQTTPacket.c
-##SRC += .\MQTT-Paho\MQTTPacket\src\MQTTConnectClient.c
-##SRC += .\MQTT-Paho\MQTTPacket\src\MQTTDeserializePublish.c
-##SRC += .\MQTT-Paho\MQTTPacket\src\MQTTSerializePublish.c
-##SRC += .\MQTT-Paho\Porting\MQTT_SPWF_interface.c
-##SRC += .\MQTT-Paho\Utils\TLocalBuffer.c
+SRC += ..\paho.mqtt.embedded-c\MQTTPacket\src\MQTTConnectClient.c
+SRC += ..\paho.mqtt.embedded-c\MQTTPacket\src\MQTTConnectServer.c
+SRC += ..\paho.mqtt.embedded-c\MQTTPacket\src\MQTTDeserializePublish.c
+SRC += ..\paho.mqtt.embedded-c\MQTTPacket\src\MQTTFormat.c
+SRC += ..\paho.mqtt.embedded-c\MQTTPacket\src\MQTTPacket.c
+SRC += ..\paho.mqtt.embedded-c\MQTTPacket\src\MQTTSerializePublish.c
+SRC += ..\paho.mqtt.embedded-c\MQTTPacket\src\MQTTSubscribeClient.c
+SRC += ..\paho.mqtt.embedded-c\MQTTPacket\src\MQTTSubscribeServer.c
+SRC += ..\paho.mqtt.embedded-c\MQTTPacket\src\MQTTUnsubscribeClient.c
+SRC += ..\paho.mqtt.embedded-c\MQTTPacket\src\MQTTUnsubscribeServer.c
 
 ## System Support
 #SRC += .\cmsis_boot\system_stm32f0xx.c
@@ -145,9 +147,10 @@ SRC += $(CORELIBDIR)\core_cm0.c
 #SRC += $(DLIBDIR)\src\gsm_engine.c
 #SRC += $(DLIBDIR)\src\gsm_hal.c
 
-## Other Peripherals
-SRC += .\src\ESP8266.c
+## Other Peripherals libraries
+#SRC += .\src\ESP8266.c
 #SRC += .\src\HLK_RM04.c
+SRC += .\src\Sim900.c
 
 # List ASM source files here
 ASRC = .\cmsis_boot\startup\startup_stm32f0xx.s
@@ -159,10 +162,7 @@ UINCDIR = $(DEVDIR) \
           $(DISCOVERY)    \
           .\inc  \
           .\cmsis_boot \
-          .\MQTT-Paho\Porting \
-          .\MQTT-Paho\MQTTClient-C\src \
-          .\MQTT-Paho\MQTTPacket\src \
-          .\MQTT-Paho\Utils    
+          ..\paho.mqtt.embedded-c\MQTTPacket\src
           
 # List the user directory to look for the libraries here
 ULIBDIR =

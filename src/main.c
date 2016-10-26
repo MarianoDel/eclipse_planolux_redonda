@@ -38,6 +38,11 @@
 
 #include "tcp_transceiver.h"
 
+//Para MQTT
+#include "MQTTPacket.h"
+#include "stdio.h"
+#include "MQTTConnect.h"
+
 
 //--- VARIABLES EXTERNAS ---//
 volatile unsigned char timer_1seg = 0;
@@ -281,7 +286,23 @@ int main(void)
 #endif
 
 
+	MQTTPacket_connectData data = MQTTPacket_connectData_initializer;
+	int rc = 0;
+	char buf[200];
+	MQTTString topicString = MQTTString_initializer;
+	char* payload = "mypayload";
+	int payloadlen = strlen(payload);int buflen = sizeof(buf);
+	int len = 0;
 
+	data.clientID.cstring = "me";
+	data.keepAliveInterval = 20;
+	data.cleansession = 1;
+	len = MQTTSerialize_connect(buf, buflen, &data); /* 1 */
+
+	topicString.cstring = "mytopic";
+	len += MQTTSerialize_publish(buf + len, buflen - len, 0, 0, 0, 0, topicString, payload, payloadlen); /* 2 */
+
+	len += MQTTSerialize_disconnect(buf + len, buflen - len); /* 3 */
 
 	//---------- Prueba USART --------//
 
