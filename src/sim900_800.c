@@ -1,4 +1,10 @@
+
 #include "sim900_800.h"
+
+#include <stdlib.h>
+#include <stdio.h>
+#include <string.h>
+
 
 //UART GSM.
 //RX.
@@ -102,34 +108,89 @@ extern char SIM900CLAVESIM2[20];
 extern char SIM900IPREMOTE[20];
 extern char SIM900PORTREMOTE[20];
 
-void GSMConfig (void)
-{
+//TODO: reimplementar esto
+//void UARTGSM_Config(void)
+//{
+//
+//	unsigned long temp;
+//	NVIC_InitTypeDef NVIC_InitStructure;
+//
+//	//---- Clk USART2 ----//
+//	if (!(RCC->APB1ENR & 0x00020000))
+//		RCC->APB1ENR |= 0x00020000;
+//
+//	if (!(RCC->APB2ENR & 0x00000004))
+//		RCC->APB2ENR |= 0x00000004;
+//
+//	//----GPIOA----//
+//	//----TX:PA2 RX:PA3----//
+//	temp = GPIOA->CRL;
+//	temp &= 0xFFFF00FF;
+//	temp |= 0x00004B00;
+//	GPIOA->CRL = temp;
+//
+//	//---- NVIC ----//
+//	NVIC_InitStructure.NVIC_IRQChannel = USART2_IRQn;
+//	NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = 2;
+//	NVIC_InitStructure.NVIC_IRQChannelSubPriority = 0;
+//	NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE;
+//	NVIC_Init(&NVIC_InitStructure);
+//
+//	//NVIC_SetPriority(USART2_IRQn, 0);
+//
+//	//buffer GSM.
+//	//RX.
+//	pBuffUARTGSMrxW = &buffUARTGSMrx[0];
+//	pBuffUARTGSMrxR = &buffUARTGSMrx[0];
+//	counterUARTGSM = 0;
+//	PacketReadyUARTGSM = 0;
+//
+//	//TX.
+//	pBuffUARTGSMtxR = &buffUARTGSMtx[0];
+//	pBuffUARTGSMtxW = &buffUARTGSMtx[0];
+//
+//	while (pBuffUARTGSMrxW != &buffUARTGSMrx[buffUARTGSMrx_dimension - 2])
+//	{
+//		*pBuffUARTGSMrxW = 0;
+//		pBuffUARTGSMrxW++;
+//	}
+//
+//	pBuffUARTGSMrxW = &buffUARTGSMrx[0];
+//
+//	while (pBuffUARTGSMtxW != &buffUARTGSMtx[buffUARTGSMrx_dimension - 2])
+//	{
+//		*pBuffUARTGSMtxW = 0;
+//		pBuffUARTGSMtxW++;
+//	}
+//
+//	pBuffUARTGSMtxW = &buffUARTGSMtx[0];
+//
+//	USART2->BRR |= 0x0EA6;
+//	USART2->CR1 |= 0x202C;
+//
+//}
+//
+//
+//void UARTGSMSend(char * ptrSend)
+//{
+//
+//	char datos = strlen ((const char *) &ptrSend[0]);
+//
+//	if (datos < (buffUARTGSMrx_dimension - 2))
+//	{
+//		if ((pBuffUARTGSMtxW + datos) < &buffUARTGSMtx[buffUARTGSMrx_dimension - 2])
+//		{
+//			strncpy((char *)pBuffUARTGSMtxW, (const char *)&ptrSend[0], datos);
+//			pBuffUARTGSMtxW += datos;
+//			*pBuffUARTGSMtxW = 0;
+//		}
+//		else
+//			pBuffUARTGSMtxW  = buffUARTGSMtx;
+//
+//		USART_ITConfig(USART2, USART_IT_TXE, ENABLE);
+//	}
+//}
 
-	unsigned long temp;
-
-	if (!(RCC->APB2ENR & 0x00000004))
-		RCC->APB2ENR |= 0x00000004;
-
-	if (!(RCC->APB2ENR & 0x00000010))
-		RCC->APB2ENR |= 0x00000010;
-
-	temp = GPIOA -> CRL;
-	temp &= 0x00FFFFFF;
-	temp |= 0x66000000;   //Open-drain.
-	GPIOA->CRL = temp;
-
-	temp = GPIOC -> CRL;
-	temp &= 0xFF00FFFF;
-	temp |= 0x00440000;   //Entrada flotante.
-	GPIOC->CRL = temp;
-
-	UARTGSM_Config();
-
-	GSM_NRESET_OFF;
-	GSM_PWRKEY_OFF;
-
-	Wait_ms(1000);
-}
 
 //------------------------------------//
 //
@@ -1445,66 +1506,6 @@ char GSMSendIP (char *ptrMSG, unsigned char timeOut)
 	return 1;
 }
 
-void UARTGSM_Config(void)
-{
-
-	unsigned long temp;
-	NVIC_InitTypeDef NVIC_InitStructure;
-
-	//---- Clk USART2 ----//
-	if (!(RCC->APB1ENR & 0x00020000))
-		RCC->APB1ENR |= 0x00020000;
-
-	if (!(RCC->APB2ENR & 0x00000004))
-		RCC->APB2ENR |= 0x00000004;
-
-	//----GPIOA----//
-	//----TX:PA2 RX:PA3----//
-	temp = GPIOA->CRL;
-	temp &= 0xFFFF00FF;
-	temp |= 0x00004B00;
-	GPIOA->CRL = temp;
-
-	//---- NVIC ----//
-	NVIC_InitStructure.NVIC_IRQChannel = USART2_IRQn;
-	NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = 2;
-	NVIC_InitStructure.NVIC_IRQChannelSubPriority = 0;
-	NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE;
-	NVIC_Init(&NVIC_InitStructure);
-
-	//NVIC_SetPriority(USART2_IRQn, 0);
-
-	//buffer GSM.
-	//RX.
-	pBuffUARTGSMrxW = &buffUARTGSMrx[0];
-	pBuffUARTGSMrxR = &buffUARTGSMrx[0];
-	counterUARTGSM = 0;
-	PacketReadyUARTGSM = 0;
-
-	//TX.
-	pBuffUARTGSMtxR = &buffUARTGSMtx[0];
-	pBuffUARTGSMtxW = &buffUARTGSMtx[0];
-
-	while (pBuffUARTGSMrxW != &buffUARTGSMrx[buffUARTGSMrx_dimension - 2])
-	{
-		*pBuffUARTGSMrxW = 0;
-		pBuffUARTGSMrxW++;
-	}
-
-	pBuffUARTGSMrxW = &buffUARTGSMrx[0];
-
-	while (pBuffUARTGSMtxW != &buffUARTGSMtx[buffUARTGSMrx_dimension - 2])
-	{
-		*pBuffUARTGSMtxW = 0;
-		pBuffUARTGSMtxW++;
-	}
-
-	pBuffUARTGSMtxW = &buffUARTGSMtx[0];
-
-	USART2->BRR |= 0x0EA6;
-	USART2->CR1 |= 0x202C;
-
-}
 
 /*
 void USART2_IRQHandler(void)
@@ -1612,33 +1613,14 @@ void GSM_TIM6 (void)
 
 }
 
-void UARTGSMSend(char * ptrSend)
-{
-
-	char datos = strlen ((const char *) &ptrSend[0]);
-
-	if (datos < (buffUARTGSMrx_dimension - 2))
-	{
-		if ((pBuffUARTGSMtxW + datos) < &buffUARTGSMtx[buffUARTGSMrx_dimension - 2])
-		{
-			strncpy((char *)pBuffUARTGSMtxW, (const char *)&ptrSend[0], datos);
-			pBuffUARTGSMtxW += datos;
-			*pBuffUARTGSMtxW = 0;
-		}
-		else
-			pBuffUARTGSMtxW  = buffUARTGSMtx;
-
-		USART_ITConfig(USART2, USART_IT_TXE, ENABLE);
-	}
-}
 
 //---------------------------------------------------------//
 //void GSMrxSMS(char * ptrMSG, char *ptrNumTel, char flagSMSin)
 //---------------------------------------------------------//
 void GSMrxSMS(unsigned char * pAlertasReportar, char * puserCode, unsigned char * pclaveAct, unsigned char * pActDact, char * pGSMReadSMStel)
 {
-	char i;
-	char flag;
+	unsigned char i;
+	unsigned char flag;
 
 	if (GSMCantSMS)
 	{
