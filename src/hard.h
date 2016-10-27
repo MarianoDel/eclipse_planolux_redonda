@@ -15,7 +15,9 @@
 
 
 //-------- Type of Program ----------------
-//#define WIFI_TO_CEL_PHONE_PROGRAM
+//#define USE_MQTT_LIB
+#define USE_GPS
+
 //#define WIFI_TO_MQTT_BROKER
 //#define USE_CERT_PROGRAM
 //#define USE_PROD_PROGRAM
@@ -28,6 +30,9 @@
 
 //GPIOA pin2
 //GPIOA pin3	usart2 tx rx (para debug)
+#define PIN3_ON	GPIOA->BSRR = 0x00000008
+#define PIN3_OFF GPIOA->BSRR = 0x00080000
+
 
 //GPIOA pin4
 #define NETLIGHT	((GPIOA->IDR & 0x0010) != 0)

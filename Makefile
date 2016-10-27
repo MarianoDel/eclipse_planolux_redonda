@@ -131,6 +131,9 @@ SRC += ..\paho.mqtt.embedded-c\MQTTPacket\src\MQTTSubscribeServer.c
 SRC += ..\paho.mqtt.embedded-c\MQTTPacket\src\MQTTUnsubscribeClient.c
 SRC += ..\paho.mqtt.embedded-c\MQTTPacket\src\MQTTUnsubscribeServer.c
 
+## GPS libraries
+SRC += .\src\gps_vktel.c
+
 ## System Support
 #SRC += .\cmsis_boot\system_stm32f0xx.c
 #SRC += $(DISCOVERY)\stm32f0_discovery.c

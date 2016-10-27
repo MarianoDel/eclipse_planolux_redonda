@@ -750,7 +750,7 @@ char GSMSendCommand (char *ptrCommand, unsigned char timeOut, unsigned char rta,
 //---------------------------------------------------------------//
 char GSM_Config(unsigned char timeOut)
 {
-	char i;
+	unsigned char i;
 
 	switch(GSMConfigState)
 	{
@@ -925,7 +925,7 @@ char GSM_Config(unsigned char timeOut)
 //-----------------------------------------------------------------------//
 char GSMSendSMS (char *ptrMSG, char *ptrNUM, unsigned char timeOut, char sim)
 {
-	char i;
+	unsigned char i;
 
 	switch(GSMSendSMSState)
 	{
@@ -1028,7 +1028,7 @@ char GSMSendSMS (char *ptrMSG, char *ptrNUM, unsigned char timeOut, char sim)
 //-----------------------------------------------------------------------//
 char GSMConfigGPRS (char sim, char *ptrAPN, char *ptrUSER, char *ptrKEY , char *ptrIPAdd, char *ptrIPremote, char *ptrPORTremote,unsigned char timeOut)
 {
-	char i;
+	unsigned char i;
 
 	switch(GSMConfigGPRSState)
 	{
@@ -1423,7 +1423,7 @@ char GSMConfigGPRS (char sim, char *ptrAPN, char *ptrUSER, char *ptrKEY , char *
 char GSM_SetSIM (unsigned char sim)
 {
 
-	unsigned int i;
+	unsigned char i;
 
 	if (sim == 1)
 		i = GSMSendCommand("AT+CDSDS=1\r\n", 50, 0, &GSMbuffRtaCommand[0]);
@@ -1585,7 +1585,7 @@ void USART2_IRQHandler(void)
 }
 */
 
-void GSM_TIM6 (void)
+void GSMTimeoutCounters (void)
 {
 	if (GSMStartTime)
 		GSMStartTime--;
@@ -1883,7 +1883,7 @@ void GSMrxSMS(unsigned char * pAlertasReportar, char * puserCode, unsigned char 
 
 char GSMConfigPDPGPRS (char sim, char *ptrAPN, char *ptrUSER, char *ptrKEY , char *ptrIPAdd, char *ptrIPremote, char *ptrPORTremote,unsigned char timeOut)
 {
-	char i;
+	unsigned char i;
 
 	switch(GSMConfigGPRSState)
 	{

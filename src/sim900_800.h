@@ -41,7 +41,7 @@ char GSMSendSMS (char *ptrMSG, char *ptrNUM, unsigned char timeOut, char sim);
 char GSMConfigGPRS (char sim, char *ptrAPN, char *ptrUSER, char *ptrKEY , char *ptrIPAdd, char *ptrIPremote, char *ptrPORTremote,unsigned char timeOut);
 char GSM_SetSIM (unsigned char sim);
 char GSMSendIP (char *ptrMSG, unsigned char timeOut);
-void GSM_TIM6 (void);
+void GSMTimeoutCounters (void);
 //void GSMPrestador(unsigned char * prestadorSim1, unsigned char * prestadorSim2);
 void GSMPrestador(unsigned char * pGSMHWstatus, unsigned char * prestadorSim1, unsigned char * prestadorSim2, char * pCONFIGURACIONgprsAPN1, char * pCONFIGURACIONgprsUsuario1, char * pCONFIGURACIONgprsClave1, char * pCONFIGURACIONgprsProveedor1, char * pCONFIGURACIONgprsAPN2, char * pCONFIGURACIONgprsUsuario2, char * pCONFIGURACIONgprsClave2, char * pCONFIGURACIONgprsProveedor2, char * pCONFIGURACIONIPREMOTE, char * pCONFIGURACIONPORTREMOTE);
 void GSMrxSMS(unsigned char * pAlertasReportar, char * puserCode, unsigned char * pclaveAct, unsigned char * pActDact, char * pGSMReadSMStel);
