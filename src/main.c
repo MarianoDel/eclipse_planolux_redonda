@@ -57,11 +57,13 @@
 volatile unsigned char tx2buff[SIZEOF_DATA];
 volatile unsigned char rx2buff[SIZEOF_DATA];
 
+volatile unsigned char tx1buff[SIZEOF_DATA];
+volatile unsigned char rx1buff[SIZEOF_DATA];
 
-
-volatile unsigned char data1[SIZEOF_DATA1];
-//static unsigned char data_back[10];
-volatile unsigned char data[SIZEOF_DATA];
+//
+//volatile unsigned char data1[SIZEOF_DATA1];
+////static unsigned char data_back[10];
+//volatile unsigned char data[SIZEOF_DATA];
 
 // ------- Externals de los timers -------
 volatile unsigned short wait_ms_var = 0;
@@ -291,6 +293,18 @@ int main(void)
 //
 //    //---------- Fin Prueba USART2 --------//
 
+	//---------- Prueba con GPS --------//
+
+	while (GPSStart() != RESP_OK);
+
+	while( 1 )
+	{
+
+		Usart2Send((char *) (const char *) "Kirno debug placa redonda\r\n");
+		Wait_ms(3000);
+	}
+
+	//---------- Fin Prueba con GPS --------//
 
 
 

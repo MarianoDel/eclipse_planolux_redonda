@@ -40,7 +40,7 @@ unsigned char GPSStart(void)
 			if (!gps_timeout)
 			{
 				unsigned char dummy = 0xFF;
-				USARTSendUnsigned(&dummy, 1);
+				Usart1SendUnsigned(&dummy, 1);
 				gps_timeout = 2;
 				gps_state++;
 			}

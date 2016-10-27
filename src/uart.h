@@ -35,27 +35,17 @@
 #define USARTx_RX_ENA	USARTx->CR1 &= 0xfffffffb
 #define USARTx_RX_DISA	USARTx->CR1 |= 0x04
 
-//modos de recepcion de paquetes
-#define PCKT_NOT_READY		0
-#define PCKT_DMX			1
-#define PCKT_RDM			2
 
 //--- Exported functions ---//
 void USART1Config(void);
 void USART1_IRQHandler(void);
-void USARTSendSingle(unsigned char);
-
-void UsartSendDMX (void);
-
-void USARTSend(char *);
-void USARTSendUnsigned(unsigned char *, unsigned char);
+void Usart1Send (char *);
+void Usart1SendUnsigned(unsigned char *, unsigned char);
 
 void USART2Config(void);
 void USART2_IRQHandler(void);
 void Usart2Send (char *);
 void Usart2SendUnsigned(unsigned char *, unsigned char);
 
-#endif //--- End ---//
-
-
+#endif
 //--- END OF FILE ---//
