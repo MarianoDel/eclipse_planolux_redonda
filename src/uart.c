@@ -18,6 +18,8 @@
 #include "stm32f0xx.h"
 #include "uart.h"
 
+#include "gps_vktel.h"
+
 #include <string.h>
 
 
@@ -31,8 +33,10 @@
 
 
 
-//--- VARIABLES EXTERNAS ---//
-
+//--- Externals variables ---//
+extern volatile unsigned char gps_mini_timeout;
+extern volatile unsigned char pckt_gps_ready;
+extern volatile unsigned char pckt_gps_bytes;
 //extern volatile unsigned char Packet_Detected_Flag;
 //extern volatile unsigned char dmx_receive_flag;
 //extern volatile unsigned short DMX_channel_received;
@@ -56,9 +60,13 @@ extern volatile unsigned char rx2buff[];
 //--- Private variables ---//
 volatile unsigned char * ptx1;
 volatile unsigned char * ptx1_pckt_index;
+volatile unsigned char * prx1;
 
 volatile unsigned char * ptx2;
 volatile unsigned char * ptx2_pckt_index;
+
+volatile unsigned char pckt_gps_ready = 0;
+volatile unsigned char usart_mode = USART_GPS_MODE;
 
 //Reception buffer.
 
@@ -67,6 +75,33 @@ volatile unsigned char * ptx2_pckt_index;
 //--- Private function prototypes ---//
 //--- Private functions ---//
 
+//cambio de modo al USART del GPS al GSM
+//le paso el modo o le pregunto
+//responde modo
+unsigned char Usart1Mode (unsigned char new_mode)
+{
+	unsigned char mode;
+
+	if (new_mode == USART_GPS_MODE)
+		usart_mode = USART_GPS_MODE;
+
+	if (new_mode == USART_GSM_MODE)
+		usart_mode = USART_GSM_MODE;
+
+	return usart_mode;
+}
+
+//reviso si tengo paquete del GPS
+unsigned char GPSRxData (void)
+{
+	if (pckt_gps_ready)
+	{
+		pckt_gps_ready = 0;
+		pckt_gps_bytes = prx1 - &rx1buff[0];
+		return 1;
+	}
+	return 0;
+}
 
 void USART1_IRQHandler(void)
 {
@@ -75,10 +110,28 @@ void USART1_IRQHandler(void)
 	/* USART in mode Receiver --------------------------------------------------*/
 	if (USART1->ISR & USART_ISR_RXNE)
 	{
-
-		//RX DMX
 		dummy = USART1->RDR & 0x0FF;
 
+		//RX GPS
+		if (usart_mode == USART_GPS_MODE)
+		{
+			if (prx1 < &rx1buff[SIZEOF_DATA])
+			{
+				*prx1 = dummy;
+				prx1++;
+			}
+			gps_mini_timeout = TT_GPS_MINI;
+		}
+
+		//RX GSM
+		if (usart_mode == USART_GSM_MODE)
+		{
+			if (prx1 < &rx1buff[SIZEOF_DATA])
+			{
+				*prx1 = dummy;
+				prx1++;
+			}
+		}
 	}
 
 	/* USART in mode Transmitter -------------------------------------------------*/
@@ -89,7 +142,7 @@ void USART1_IRQHandler(void)
 		{
 			if ((ptx1 < &tx1buff[SIZEOF_DATA]) && (ptx1 < ptx1_pckt_index))
 			{
-				USART2->TDR = *ptx1;
+				USART1->TDR = *ptx1;
 				ptx1++;
 			}
 			else
@@ -166,6 +219,11 @@ void Usart2SendUnsigned(unsigned char * send, unsigned char size)
 	}
 }
 
+void Usart2SendSingle(unsigned char tosend)
+{
+	Usart2SendUnsigned(&tosend, 1);
+}
+
 void Usart1Send (char * send)
 {
 	unsigned char i;
@@ -184,6 +242,10 @@ void Usart1SendUnsigned(unsigned char * send, unsigned char size)
 	}
 }
 
+void Usart1SendSingle(unsigned char tosend)
+{
+	Usart1SendUnsigned(&tosend, 1);
+}
 
 
 void USART2Config(void)
@@ -213,12 +275,12 @@ void USART1Config(void)
 	//para empezar con el GPS
 	GPIOB->AFR[0] |= 0x00000000;	//PB7 -> AF0 PB6 -> AF0
 	//para empezar con el GSM
-	GPIOA->AFR[1] |= 0x00000110;	//PA10 -> AF1 PA9 -> AF1
+	//GPIOA->AFR[1] |= 0x00000110;	//PA10 -> AF1 PA9 -> AF1
 #endif
 
 	ptx1 = tx1buff;
 	ptx1_pckt_index = tx1buff;
-	//prx1 = rx1buff;
+	prx1 = rx1buff;
 
 	USART1->BRR = USART_9600;
 //	USART1->CR2 |= USART_CR2_STOP_1;	//2 bits stop

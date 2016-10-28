@@ -97,6 +97,12 @@ unsigned short s2;
 unsigned short sac;
 unsigned char sac_aux;
 
+// ------- Externals del GPS -------
+volatile unsigned char gps_mini_timeout;
+volatile unsigned char pckt_gps_ready;
+volatile unsigned char pckt_gps_bytes;
+
+
 
 //--- VARIABLES GLOBALES ---//
 parameters_typedef param_struct;
@@ -112,6 +118,9 @@ volatile unsigned char filter_timer;
 //volatile unsigned char move_relay;
 volatile unsigned short secs = 0;
 
+// ------- del GPS -------
+//unsigned char str_conf1 [] = One_Output_Ten_Secs_String_Cmd;
+unsigned char str_conf1 [] = One_Output_One_Secs_String_Cmd;
 
 // ------- del DMX -------
 volatile unsigned char signal_state = 0;
@@ -177,6 +186,7 @@ int main(void)
 	unsigned char last_bright = 0;
 	unsigned char show_ldr = 0;
 	int dummy_resp = 0;
+	unsigned char pps_one = 0;
 
 #ifdef USE_PROD_PROGRAM
 	unsigned char jump_the_menu = 0;
@@ -294,14 +304,36 @@ int main(void)
 //    //---------- Fin Prueba USART2 --------//
 
 	//---------- Prueba con GPS --------//
+	Usart2SendSingle('M');
+	Usart2Send((char *) (const char *) "Kirno debug placa redonda\r\n");
+	Wait_ms(1000);
 
+	Usart1Mode (USART_GPS_MODE);
 	while (GPSStart() != RESP_OK);
+
+	//mando conf al gps
+	Usart1SendUnsigned(str_conf1, sizeof(str_conf1));
+	Wait_ms(1000);
 
 	while( 1 )
 	{
-
-		Usart2Send((char *) (const char *) "Kirno debug placa redonda\r\n");
-		Wait_ms(3000);
+		if (GPS_PPS)
+		{
+			if (!pps_one)
+			{
+				pps_one = 1;
+				Usart2SendSingle('P');
+			}
+		}
+		else
+		{
+			if (pps_one)
+				pps_one = 0;
+		}
+//		if (GPSRxData())
+//		{
+//			Usart2SendUnsigned(rx1buff, pckt_gps_bytes);
+//		}
 	}
 
 	//---------- Fin Prueba con GPS --------//

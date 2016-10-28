@@ -9,6 +9,14 @@
 #include "main_menu.h"
 #include "uart.h"
 
+
+//--- Externals variables ---//
+extern volatile unsigned char gps_mini_timeout;
+extern volatile unsigned char pckt_gps_ready;
+extern volatile unsigned char pckt_gps_bytes;
+
+
+//--- Private variables ---//
 GPSState gps_state = GPS_INIT;
 
 volatile unsigned short gps_timeout;
@@ -31,7 +39,7 @@ unsigned char GPSStart(void)
 			if (!gps_timeout)
 			{
 				GPS_PIN_ENA;
-				gps_timeout = 100;
+				gps_timeout = 300;	//300ms startup
 				gps_state++;
 			}
 			break;
@@ -39,8 +47,7 @@ unsigned char GPSStart(void)
 		case GPS_INIT3:
 			if (!gps_timeout)
 			{
-				unsigned char dummy = 0xFF;
-				Usart1SendUnsigned(&dummy, 1);
+				Usart1SendSingle(0xFF);
 				gps_timeout = 2;
 				gps_state++;
 			}

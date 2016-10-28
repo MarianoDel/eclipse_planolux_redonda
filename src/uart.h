@@ -35,17 +35,29 @@
 #define USARTx_RX_ENA	USARTx->CR1 &= 0xfffffffb
 #define USARTx_RX_DISA	USARTx->CR1 |= 0x04
 
+//--- Modos de funcionamiento del USART1
+#define USART_GPS_MODE		1
+#define USART_GSM_MODE		2
+#define USART_ASK_MODE		0
+
 
 //--- Exported functions ---//
+unsigned char GPSRxData (void);
+unsigned char Usart1Mode (unsigned char );
+
+
 void USART1Config(void);
 void USART1_IRQHandler(void);
 void Usart1Send (char *);
 void Usart1SendUnsigned(unsigned char *, unsigned char);
+void Usart1SendSingle(unsigned char );
 
 void USART2Config(void);
 void USART2_IRQHandler(void);
 void Usart2Send (char *);
 void Usart2SendUnsigned(unsigned char *, unsigned char);
+void Usart2SendSingle(unsigned char );
+
 
 #endif
 //--- END OF FILE ---//
