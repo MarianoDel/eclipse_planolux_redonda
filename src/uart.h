@@ -42,8 +42,8 @@
 
 
 //--- Exported functions ---//
-unsigned char GPSRxData (void);
 unsigned char Usart1Mode (unsigned char );
+unsigned char ReadUsart1Buffer (unsigned char *, unsigned char);
 
 
 void USART1Config(void);

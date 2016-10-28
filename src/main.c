@@ -66,7 +66,6 @@ volatile unsigned char rx1buff[SIZEOF_DATA];
 //volatile unsigned char data[SIZEOF_DATA];
 
 // ------- Externals de los timers -------
-volatile unsigned short wait_ms_var = 0;
 //volatile unsigned short prog_timer = 0;
 //volatile unsigned short mainmenu_timer = 0;
 volatile unsigned short show_select_timer = 0;
@@ -99,8 +98,10 @@ unsigned char sac_aux;
 
 // ------- Externals del GPS -------
 volatile unsigned char gps_mini_timeout;
-volatile unsigned char pckt_gps_ready;
-volatile unsigned char pckt_gps_bytes;
+volatile unsigned char gps_pckt_ready;
+volatile unsigned char gps_have_data;
+unsigned char gps_pckt_bytes;
+unsigned char gps_buff [SIZEOF_GPSBUFF];
 
 
 
@@ -108,6 +109,7 @@ volatile unsigned char pckt_gps_bytes;
 parameters_typedef param_struct;
 
 // ------- de los timers -------
+volatile unsigned short wait_ms_var = 0;
 volatile unsigned short timer_standby;
 volatile unsigned short tcp_kalive_timer;
 //volatile unsigned char display_timer;
@@ -118,9 +120,6 @@ volatile unsigned char filter_timer;
 //volatile unsigned char move_relay;
 volatile unsigned short secs = 0;
 
-// ------- del GPS -------
-//unsigned char str_conf1 [] = One_Output_Ten_Secs_String_Cmd;
-unsigned char str_conf1 [] = One_Output_One_Secs_String_Cmd;
 
 // ------- del DMX -------
 volatile unsigned char signal_state = 0;
@@ -309,31 +308,39 @@ int main(void)
 	Wait_ms(1000);
 
 	Usart1Mode (USART_GPS_MODE);
+
+	//mando reset al gps
+	Usart2Send((char *) (const char *) "Reset de GPS\r\n");
+	GPSStartResetSM ();
 	while (GPSStart() != RESP_OK);
 
 	//mando conf al gps
-	Usart1SendUnsigned(str_conf1, sizeof(str_conf1));
-	Wait_ms(1000);
+	Usart2Send((char *) (const char *) "Config al GPS\r\n");
+	GPSConfigResetSM ();
+	while (GPSConfig() != RESP_OK);
 
+//	//mando reset factory al gps
+//	Usart2Send((char *) (const char *) "GPS a Factory Default\r\n");
+//	GPSResetFactoryResetSM ();
+//	while (GPSResetFactory() != RESP_OK);
+
+	Usart2Send((char *) (const char *) "Espero datos de posicion\r\n");
 	while( 1 )
 	{
-		if (GPS_PPS)
+		if (gps_pckt_ready)
 		{
-			if (!pps_one)
-			{
-				pps_one = 1;
-				Usart2SendSingle('P');
-			}
+			gps_pckt_ready = 0;
+			//Usart2SendSingle('P');
+			Usart2Send("\r\nP:\r\n");
+			Usart2SendUnsigned(gps_buff, gps_pckt_bytes);
 		}
-		else
-		{
-			if (pps_one)
-				pps_one = 0;
-		}
-//		if (GPSRxData())
+
+			//		if (GPSRxData())
 //		{
 //			Usart2SendUnsigned(rx1buff, pckt_gps_bytes);
 //		}
+
+		GPSProcess();
 	}
 
 	//---------- Fin Prueba con GPS --------//
@@ -634,14 +641,8 @@ void TimingDelay_Decrement(void)
 	if (timer_standby)
 		timer_standby--;
 
-	if (switches_timer)
-		switches_timer--;
-
 	if (acswitch_timer)
 		acswitch_timer--;
-
-	if (dmx_timeout_timer)
-		dmx_timeout_timer--;
 
 //	if (prog_timer)
 //		prog_timer--;
@@ -652,57 +653,6 @@ void TimingDelay_Decrement(void)
 	if (filter_timer)
 		filter_timer--;
 
-	if (grouped_master_timeout_timer)
-		grouped_master_timeout_timer--;
-
-	if (show_select_timer)
-		show_select_timer--;
-
-	if (scroll1_timer)
-		scroll1_timer--;
-
-	if (scroll2_timer)
-		scroll2_timer--;
-
-	if (standalone_timer)
-		standalone_timer--;
-
-//	if (standalone_menu_timer)
-//		standalone_menu_timer--;
-
-	if (standalone_enable_menu_timer)
-		standalone_enable_menu_timer--;
-
-#ifdef USE_HLK_WIFI
-	if (hlk_timeout)
-		hlk_timeout--;
-
-	if (hlk_mini_timeout)
-		hlk_mini_timeout--;
-
-	if (tcp_kalive_timer)
-		tcp_kalive_timer--;
-
-	if (timer_wifi_bright)
-		timer_wifi_bright--;
-#endif
-
-#ifdef USE_ESP_WIFI
-	if (esp_timeout)
-		esp_timeout--;
-
-	if (esp_mini_timeout)
-		esp_mini_timeout--;
-
-	if (tcp_kalive_timer)
-		tcp_kalive_timer--;
-
-	if (timer_wifi_bright)
-		timer_wifi_bright--;
-
-	if (tcp_send_timeout)
-		tcp_send_timeout--;
-#endif
 
 	//cuenta de a 1 minuto
 	if (secs > 59999)	//pasaron 1 min
@@ -713,7 +663,7 @@ void TimingDelay_Decrement(void)
 	else
 		secs++;
 
-#ifdef WIFI_TO_MQTT_BROKER
+#ifdef USE_MQTT_LIB
 	//timer del MQTT
 	SysTickIntHandler();
 #endif

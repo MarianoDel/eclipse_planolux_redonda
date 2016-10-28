@@ -34,17 +34,11 @@
 
 
 //--- Externals variables ---//
+
+//--- Externals del GPS ---//
 extern volatile unsigned char gps_mini_timeout;
-extern volatile unsigned char pckt_gps_ready;
-extern volatile unsigned char pckt_gps_bytes;
-//extern volatile unsigned char Packet_Detected_Flag;
-//extern volatile unsigned char dmx_receive_flag;
-//extern volatile unsigned short DMX_channel_received;
-//extern volatile unsigned short DMX_channel_selected;
-//extern volatile unsigned char DMX_channel_quantity;
-//extern volatile unsigned char data1[];
-////static unsigned char data_back[10];
-//extern volatile unsigned char data[];
+extern volatile unsigned char gps_pckt_ready;
+extern volatile unsigned char gps_have_data;;
 
 
 //#define data512		data1		//en rx es la trama recibida; en tx es la trama a enviar
@@ -80,7 +74,10 @@ volatile unsigned char usart_mode = USART_GPS_MODE;
 //responde modo
 unsigned char Usart1Mode (unsigned char new_mode)
 {
-	unsigned char mode;
+	unsigned int temp;
+
+	temp = USART1->CR1;
+	USART1->CR1 &= 0xFFFFFF6F;		//limpio flags IE
 
 	if (new_mode == USART_GPS_MODE)
 		usart_mode = USART_GPS_MODE;
@@ -88,19 +85,28 @@ unsigned char Usart1Mode (unsigned char new_mode)
 	if (new_mode == USART_GSM_MODE)
 		usart_mode = USART_GSM_MODE;
 
+	USART1->CR1 = temp;
 	return usart_mode;
 }
 
-//reviso si tengo paquete del GPS
-unsigned char GPSRxData (void)
+unsigned char ReadUsart1Buffer (unsigned char * bout, unsigned char max_len)
 {
-	if (pckt_gps_ready)
+	unsigned int len;
+
+	len = prx1 - rx1buff;
+
+	if (len < max_len)
+		memcpy(bout, (unsigned char *) rx1buff, len);
+	else
 	{
-		pckt_gps_ready = 0;
-		pckt_gps_bytes = prx1 - &rx1buff[0];
-		return 1;
+		memcpy(bout, (unsigned char *) rx1buff, len);
+		len = max_len;
 	}
-	return 0;
+
+	//ajusto punteros de rx luego de la copia
+	prx1 = rx1buff;
+
+	return (unsigned char) len;
 }
 
 void USART1_IRQHandler(void)
@@ -119,6 +125,7 @@ void USART1_IRQHandler(void)
 			{
 				*prx1 = dummy;
 				prx1++;
+				gps_have_data = 1;
 			}
 			gps_mini_timeout = TT_GPS_MINI;
 		}
