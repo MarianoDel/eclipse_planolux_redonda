@@ -27,12 +27,41 @@ unsigned char gps_buff [SIZEOF_GPSBUFF];
 // ------- String de configuracion del GPS -------
 unsigned char str_conf1 [] = One_Output_Ten_Secs_String_Cmd;
 //unsigned char str_conf1 [] = One_Output_One_Secs_String_Cmd;
-unsigned char str_conf2 [] = Disable_GPRMC_String_Cmd;
-unsigned char str_conf3 [] = Disable_GPVTG_String_Cmd;
+
+//unsigned char str_conf2 [] = Disable_GPRMC_String_Cmd;
+//unsigned char str_conf3 [] = Disable_GPVTG_String_Cmd;
+//unsigned char str_conf4 [] = Disable_GPGGA_String_Cmd;
+////unsigned char str_conf5 [] = Disable_GPGSA_String_Cmd;
+//unsigned char str_conf5 [] = Enable_GPGSA_String_Cmd;
+//unsigned char str_conf6 [] = Disable_GPGSV_String_Cmd;
+
+//unsigned char str_conf2 [] = Enable_GPDTM_String_Cmd;
+//unsigned char str_conf3 [] = Enable_GPGBS_String_Cmd;
+//unsigned char str_conf4 [] = Enable_GPGGA_String_Cmd;
+//unsigned char str_conf5 [] = Enable_GPGLL_String_Cmd;
+//unsigned char str_conf6 [] = Enable_GPGRS_String_Cmd;
+//
+//unsigned char str_conf7 [] = Enable_GPGSA_String_Cmd;
+//unsigned char str_conf8 [] = Enable_GPGST_String_Cmd;
+//unsigned char str_conf9 [] = Enable_GPGSV_String_Cmd;
+//unsigned char str_conf10 [] = Enable_GPRMC_String_Cmd;
+//unsigned char str_conf11 [] = Enable_GPVTG_String_Cmd;
+//
+//unsigned char str_conf12 [] = Enable_GPZDA_String_Cmd;
+
+unsigned char str_conf2 [] = Disable_GPDTM_String_Cmd;
+unsigned char str_conf3 [] = Disable_GPGBS_String_Cmd;
 unsigned char str_conf4 [] = Disable_GPGGA_String_Cmd;
-//unsigned char str_conf5 [] = Disable_GPGSA_String_Cmd;
-unsigned char str_conf5 [] = Enable_GPGSA_String_Cmd;
-unsigned char str_conf6 [] = Disable_GPGSV_String_Cmd;
+unsigned char str_conf5 [] = Enable_GPGLL_String_Cmd;
+unsigned char str_conf6 [] = Disable_GPGRS_String_Cmd;
+
+unsigned char str_conf7 [] = Disable_GPGSA_String_Cmd;
+unsigned char str_conf8 [] = Disable_GPGST_String_Cmd;
+unsigned char str_conf9 [] = Disable_GPGSV_String_Cmd;
+unsigned char str_conf10 [] = Disable_GPRMC_String_Cmd;
+unsigned char str_conf11 [] = Disable_GPVTG_String_Cmd;
+
+unsigned char str_conf12 [] = Disable_GPZDA_String_Cmd;
 
 //unsigned char str_conf5 [] = Disable_GPDTM_String_Cmd;
 //unsigned char str_conf6 [] = Disable_GPGBS_String_Cmd;
@@ -169,6 +198,60 @@ unsigned char GPSConfig(void)
 			if (!gps_timeout)
 			{
 				Usart1SendUnsigned(str_conf6, sizeof(str_conf6));
+				gps_timeout = 100;
+				gps_state++;
+			}
+			break;
+
+		case GPS_INIT7:
+			if (!gps_timeout)
+			{
+				Usart1SendUnsigned(str_conf7, sizeof(str_conf7));
+				gps_timeout = 100;
+				gps_state++;
+			}
+			break;
+
+		case GPS_INIT8:
+			if (!gps_timeout)
+			{
+				Usart1SendUnsigned(str_conf8, sizeof(str_conf8));
+				gps_timeout = 100;
+				gps_state++;
+			}
+			break;
+
+		case GPS_INIT9:
+			if (!gps_timeout)
+			{
+				Usart1SendUnsigned(str_conf9, sizeof(str_conf9));
+				gps_timeout = 100;
+				gps_state++;
+			}
+			break;
+
+		case GPS_INIT10:
+			if (!gps_timeout)
+			{
+				Usart1SendUnsigned(str_conf10, sizeof(str_conf10));
+				gps_timeout = 100;
+				gps_state++;
+			}
+			break;
+
+		case GPS_INIT11:
+			if (!gps_timeout)
+			{
+				Usart1SendUnsigned(str_conf11, sizeof(str_conf11));
+				gps_timeout = 100;
+				gps_state++;
+			}
+			break;
+
+		case GPS_INIT12:
+			if (!gps_timeout)
+			{
+				Usart1SendUnsigned(str_conf12, sizeof(str_conf12));
 				gps_timeout = 100;
 				gps_state = GPS_SAVE;
 			}
