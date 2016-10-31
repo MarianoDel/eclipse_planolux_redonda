@@ -36,9 +36,9 @@
 //--- Externals variables ---//
 
 //--- Externals del GPS ---//
-extern volatile unsigned char gps_mini_timeout;
-extern volatile unsigned char gps_pckt_ready;
-extern volatile unsigned char gps_have_data;;
+extern volatile unsigned char usart1_mini_timeout;
+extern volatile unsigned char usart1_pckt_ready;
+extern volatile unsigned char usart1_have_data;
 
 
 //#define data512		data1		//en rx es la trama recibida; en tx es la trama a enviar
@@ -74,18 +74,55 @@ volatile unsigned char usart_mode = USART_GPS_MODE;
 //responde modo
 unsigned char Usart1Mode (unsigned char new_mode)
 {
-	unsigned int temp;
+	unsigned int temp_int;
+	unsigned int temp_gpio;
 
-	temp = USART1->CR1;
+	temp_int = USART1->CR1;
 	USART1->CR1 &= 0xFFFFFF6F;		//limpio flags IE
 
 	if (new_mode == USART_GPS_MODE)
+	{
+		//config gpio A to Input
+		temp_gpio = GPIOA->MODER;		//2 bits por pin
+		temp_gpio &= 0xFFC3FFFF;		//PA9 PA10 input
+		temp_gpio |= 0x00000000;		//
+		GPIOA->MODER = temp_gpio;
+
+		GPIOA->AFR[1] &= 0xFFFFF00F;	//PA9 -> AF0 A10 -> AF0
+
+		//config gpio B to Alternative
+		temp_gpio = GPIOB->MODER;		//2 bits por pin
+		temp_gpio &= 0xFFFF0FFF;		//PB6 PB7 alternative
+		temp_gpio |= 0x0000A000;		//
+		GPIOB->MODER = temp_gpio;
+
+		GPIOB->AFR[0] &= 0x00FFFFFF;	//PB7 -> AF0 PB6 -> AF0
+
 		usart_mode = USART_GPS_MODE;
+	}
 
 	if (new_mode == USART_GSM_MODE)
-		usart_mode = USART_GSM_MODE;
+	{
+		//config gpio B to Input
+		temp_gpio = GPIOB->MODER;		//2 bits por pin
+		temp_gpio &= 0xFFFF0FFF;		//PB6 PB7 input
+		temp_gpio |= 0x00000000;		//
+		GPIOB->MODER = temp_gpio;
 
-	USART1->CR1 = temp;
+		GPIOB->AFR[0] &= 0x00FFFFFF;	//PB7 -> AF0 PB6 -> AF0
+
+		//config gpio A to Alternative
+		temp_gpio = GPIOA->MODER;		//2 bits por pin
+		temp_gpio &= 0xFFC3FFFF;		//PA9 PA10 alternative
+		temp_gpio |= 0x00280000;		//
+		GPIOA->MODER = temp_gpio;
+
+		GPIOA->AFR[1] |= 0x00000110;	//PA10 -> AF1 PA9 -> AF1
+
+		usart_mode = USART_GSM_MODE;
+	}
+
+	USART1->CR1 = temp_int;
 	return usart_mode;
 }
 
@@ -118,27 +155,29 @@ void USART1_IRQHandler(void)
 	{
 		dummy = USART1->RDR & 0x0FF;
 
-		//RX GPS
-		if (usart_mode == USART_GPS_MODE)
+		//RX GPS & GSM
+		if ((usart_mode == USART_GPS_MODE) || (usart_mode == USART_GSM_MODE))
 		{
 			if (prx1 < &rx1buff[SIZEOF_DATA])
 			{
 				*prx1 = dummy;
 				prx1++;
-				gps_have_data = 1;
+				usart1_have_data = 1;
 			}
-			gps_mini_timeout = TT_GPS_MINI;
+			usart1_mini_timeout = TT_GPS_MINI;
 		}
 
-		//RX GSM
-		if (usart_mode == USART_GSM_MODE)
-		{
-			if (prx1 < &rx1buff[SIZEOF_DATA])
-			{
-				*prx1 = dummy;
-				prx1++;
-			}
-		}
+//		//RX GSM
+//		if (usart_mode == USART_GSM_MODE)
+//		{
+//			if (prx1 < &rx1buff[SIZEOF_DATA])
+//			{
+//				*prx1 = dummy;
+//				prx1++;
+//				gsm_have_data = 1;
+//			}
+//			gsm_mini_timeout = TT_GSM_MINI;
+//		}
 	}
 
 	/* USART in mode Transmitter -------------------------------------------------*/
@@ -280,7 +319,8 @@ void USART1Config(void)
 
 #ifdef VER_1_0
 	//para empezar con el GPS
-	GPIOB->AFR[0] |= 0x00000000;	//PB7 -> AF0 PB6 -> AF0
+	//GPIOB->AFR[0] |= 0x00000000;	//PB7 -> AF0 PB6 -> AF0
+	GPIOB->AFR[0] &= 0x00FFFFFF;	//PB7 -> AF0 PB6 -> AF0
 	//para empezar con el GSM
 	//GPIOA->AFR[1] |= 0x00000110;	//PA10 -> AF1 PA9 -> AF1
 #endif

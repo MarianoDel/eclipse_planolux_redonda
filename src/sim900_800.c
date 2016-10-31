@@ -1,5 +1,6 @@
 
 #include "sim900_800.h"
+#include "uart.h"
 
 #include <stdlib.h>
 #include <stdio.h>
@@ -21,7 +22,7 @@ volatile char *pBuffUARTGSMtxW;
 
 //GSM Start.
 char GSMStartState = 0;
-volatile char GSMStartTime;
+volatile unsigned short GSMStartTime;
 
 //GSM SendCommand.
 char GSMSendCommandState = 0;
@@ -108,6 +109,18 @@ extern char SIM900CLAVESIM2[20];
 extern char SIM900IPREMOTE[20];
 extern char SIM900PORTREMOTE[20];
 
+
+extern volatile unsigned char usart1_mini_timeout;
+extern volatile unsigned char usart1_pckt_ready;
+extern volatile unsigned char usart1_have_data;
+extern unsigned char usart1_pckt_bytes;
+
+#define gsm_mini_timeout	usart1_mini_timeout
+#define gsm_pckt_ready		usart1_pckt_ready
+#define gsm_have_data		usart1_have_data
+#define gsm_pckt_bytes		usart1_pckt_bytes
+
+
 //TODO: reimplementar esto
 //void UARTGSM_Config(void)
 //{
@@ -191,6 +204,18 @@ extern char SIM900PORTREMOTE[20];
 //	}
 //}
 
+void GSMProcess (void)
+{
+	if ((gsm_have_data) && (!gsm_mini_timeout))
+	{
+		gsm_have_data = 0;
+		gsm_pckt_ready = 1;
+		gsm_pckt_bytes = ReadUsart1Buffer((unsigned char *) buffUARTGSMrx2, sizeof(buffUARTGSMrx2));
+		PacketReadyUARTGSM = 1;
+//		GSMReceive (unsigned char * pAlertasReportar, char * puserCode, unsigned char * pclaveAct, unsigned char * pActDact);
+	}
+}
+
 
 //------------------------------------//
 //
@@ -199,7 +224,8 @@ extern char SIM900PORTREMOTE[20];
 //ERR:	3
 //TO:	4
 //------------------------------------//
-char GSM_Start(void)
+/*
+unsigned char GSM_Start(void)
 {
 
 	if (!GSM_STATUS || (GSMStartState > 1))
@@ -254,11 +280,68 @@ char GSM_Start(void)
 	}
 	return 1;
 }
+*/
+
+unsigned char GSM_Start (void)
+{
+	switch(GSMStartState)
+	{
+		case 0:
+			//Levanto PWRKEY
+			LED_NETLIGHT_ON;
+			GSMStartTime = 100;
+			GSM_PWRKEY_ON;
+			GSMStartState++;
+			break;
+
+		case 1:
+			//Bajo PWRKEY
+			if(GSMStartTime == 0) //Espera 100 mseg
+			{
+				LED_NETLIGHT_OFF;
+				GSM_PWRKEY_OFF;
+				GSMStartTime = 4000; //hasta 4 segundos.
+				GSMStartState++;
+			}
+			break;
+
+		case 2:
+			//Levanto PWRKEY
+			if (GSM_STATUS)
+			{
+				GSMStartTime = 1000;
+				GSMStartState++;
+				LED_NETLIGHT_ON;
+				GSM_PWRKEY_ON;
+			}
+			else if(GSMStartTime == 0) //Espera hasta 4 segs
+			{
+				return 4;
+			}
+			break;
+
+		case 3:
+			if(GSMStartTime == 0)	//Espero 1 segundo mas y reviso GSM_STATUS
+			{
+				if (GSM_STATUS)
+					return 2;
+				else
+					return 4;
+			}
+			break;
+
+		default:
+			GSMStartState = 0;
+			break;
+	}
+	return 1;
+}
+
 
 void GSM_Stop(void)
 {
-
-	Wait_ms(4000);
+	//TODO: cambiar todos los Wait
+	//Wait_ms(4000);
 	GSM_PWRKEY_OFF;
 	do {
 		Wait_ms(250);
@@ -491,14 +574,15 @@ char GSMCloseIP(void)
 	return 0;
 }
 
-void GSMReceive (unsigned char * pAlertasReportar, char * puserCode, unsigned char * pclaveAct, unsigned char * pActDact)
+//void GSMReceive (unsigned char * pAlertasReportar, char * puserCode, unsigned char * pclaveAct, unsigned char * pActDact)
+void GSMReceive (void)
 {
 
 	//---- Comunicacion con modulo GSM ----//
 	if (PacketReadyUARTGSM)
 	{
 
-		UARTDBGSend((char *)&buffUARTGSMrx2[0]);
+//		UARTDBGSend((char *)&buffUARTGSMrx2[0]);
 
 		if (GSMSendCommandFlag)
 		{
@@ -568,6 +652,7 @@ void GSMReceive (unsigned char * pAlertasReportar, char * puserCode, unsigned ch
 		}
 		//respuestas no esperadas
 		//respuestas no esperadas
+
 		if (!strncmp((char *)&buffUARTGSMrx2[0], (const char *)"000:", sizeof ("000:") -1))
 		{
 			strcpy(&GSMReadSMSrepIn[0], (const char *)&buffUARTGSMrx2[0]);
@@ -581,33 +666,33 @@ void GSMReceive (unsigned char * pAlertasReportar, char * puserCode, unsigned ch
 			GSMCantSMS = buffUARTGSMrx2[12] - 48;
 		}
 
-		if(!strncmp((const char *)&buffUARTGSMrx2[0], (const char *)"000: EST,", strlen((const char *)"000: EST,")))
-			*pAlertasReportar |= 0x80;
-
-		if(!strncmp((const char *)&buffUARTGSMrx2[0], (const char *)"000: ARM,", strlen((const char *)"000: ARM,")))
-		{
-			if (!strncmp((const char *)&buffUARTGSMrx2[9], (const char *)puserCode, strlen((const char *)puserCode)))
-			{
-				strncpy((char *) pclaveAct, (const char *)&buffUARTGSMrx2[16], 4);
-
-				*pActDact |= 0x40; //Armar
-			}
-		}
+//		if(!strncmp((const char *)&buffUARTGSMrx2[0], (const char *)"000: EST,", strlen((const char *)"000: EST,")))
+//			*pAlertasReportar |= 0x80;
+//
+//		if(!strncmp((const char *)&buffUARTGSMrx2[0], (const char *)"000: ARM,", strlen((const char *)"000: ARM,")))
+//		{
+//			if (!strncmp((const char *)&buffUARTGSMrx2[9], (const char *)puserCode, strlen((const char *)puserCode)))
+//			{
+//				strncpy((char *) pclaveAct, (const char *)&buffUARTGSMrx2[16], 4);
+//
+//				*pActDact |= 0x40; //Armar
+//			}
+//		}
 
 		if(!strncmp((const char *)&buffUARTGSMrx2[0], (const char *)"CLOSED", strlen((const char *)"CLOSED")))
 		{
 			flagCloseIP = 1;
 		}
 
-		if(!strncmp((const char *)&buffUARTGSMrx2[0], (const char *)"000: DRM,", strlen((const char *)"000: DRM,")))
-		{
-			if (!strncmp((const char *)&buffUARTGSMrx2[9], (const char *)puserCode, strlen((const char *)puserCode)))
-			{
-				strncpy((char *) pclaveAct, (const char *)&buffUARTGSMrx2[16], 4);
-
-				*pActDact |= 0x80; //Desarmar
-			}
-		}
+//		if(!strncmp((const char *)&buffUARTGSMrx2[0], (const char *)"000: DRM,", strlen((const char *)"000: DRM,")))
+//		{
+//			if (!strncmp((const char *)&buffUARTGSMrx2[9], (const char *)puserCode, strlen((const char *)puserCode)))
+//			{
+//				strncpy((char *) pclaveAct, (const char *)&buffUARTGSMrx2[16], 4);
+//
+//				*pActDact |= 0x80; //Desarmar
+//			}
+//		}
 /*		if(!strncmp((const char *)&buffUARTGSMrx2[0], (const char *)"000: ARM", sizeof("000: ARM") - 1))
 		{
 			if (!strncmp((const char *)&buffUARTGSMrx2[9], (const char *)puserCode, strlen((const char *)puserCode)))
@@ -687,6 +772,7 @@ char GSMSendCommand (char *ptrCommand, unsigned char timeOut, unsigned char rta,
 				UARTGSMSend(&ptrCommand[0]);
 			}
 			break;
+
 		case 2:
 			//Espera rta.
 			if (GSMSendCommandFlag == 2)
@@ -697,6 +783,7 @@ char GSMSendCommand (char *ptrCommand, unsigned char timeOut, unsigned char rta,
 				strcpy((char *)ptrRta, (const char *)&buffUARTGSMrx2[0]);
 			}
 			break;
+
 		case 3:
 			//Espera OK.
 			if (GSMSendCommandFlag == 4)

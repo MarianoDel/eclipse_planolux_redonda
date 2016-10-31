@@ -49,6 +49,11 @@
 #include "gps_vktel.h"
 #endif
 
+//Para Hardware de GSM
+#ifdef USE_GSM
+#include "sim900_800.h"
+#endif
+
 //--- VARIABLES EXTERNAS ---//
 
 
@@ -96,14 +101,34 @@ unsigned short s2;
 unsigned short sac;
 unsigned char sac_aux;
 
-// ------- Externals del GPS -------
-volatile unsigned char gps_mini_timeout;
-volatile unsigned char gps_pckt_ready;
-volatile unsigned char gps_have_data;
-unsigned char gps_pckt_bytes;
+// ------- Externals del GPS & GSM -------
+volatile unsigned char usart1_mini_timeout;
+volatile unsigned char usart1_pckt_ready;
+volatile unsigned char usart1_have_data;
+unsigned char usart1_pckt_bytes;
+
+#define gps_mini_timeout	usart1_mini_timeout
+#define gps_pckt_ready		usart1_pckt_ready
+#define gps_have_data		usart1_have_data
+#define gps_pckt_bytes		usart1_pckt_bytes
+
+#ifdef USE_GPS
 unsigned char gps_buff [SIZEOF_GPSBUFF];
+#endif
 
+// ------- Externals del GSM -------
+#ifdef USE_GSM
+#define gsm_mini_timeout	usart1_mini_timeout
+#define gsm_pckt_ready		usart1_pckt_ready
+#define gsm_have_data		usart1_have_data
+#define gsm_pckt_bytes		usart1_pckt_bytes
 
+unsigned char AlertasReportar[5] = {0,0,0,0,0};
+unsigned char ActDact = 0;
+unsigned char claveAct[5] = {0,0,0,0,0};
+volatile char USERCODE[8] = "123456";
+extern volatile char buffUARTGSMrx2[];
+#endif
 
 //--- VARIABLES GLOBALES ---//
 parameters_typedef param_struct;
@@ -303,6 +328,7 @@ int main(void)
 //    //---------- Fin Prueba USART2 --------//
 
 	//---------- Prueba con GPS --------//
+#ifdef USE_GPS
 	Usart2SendSingle('M');
 	Usart2Send((char *) (const char *) "Kirno debug placa redonda\r\n");
 	Wait_ms(1000);
@@ -325,6 +351,8 @@ int main(void)
 //	while (GPSResetFactory() != RESP_OK);
 
 	Usart2Send((char *) (const char *) "Espero datos de posicion\r\n");
+//	timer_standby = 60000;
+//	while( timer_standby )
 	while( 1 )
 	{
 		if (gps_pckt_ready)
@@ -335,13 +363,68 @@ int main(void)
 			Usart2SendUnsigned(gps_buff, gps_pckt_bytes);
 		}
 
-			//		if (GPSRxData())
-//		{
-//			Usart2SendUnsigned(rx1buff, pckt_gps_bytes);
-//		}
-
 		GPSProcess();
 	}
+#endif
+	//---------- Fin Prueba con GPS --------//
+
+	//---------- Prueba con GSM --------//
+#ifdef USE_GSM
+	Usart2Send((char *) (const char *) "Cambio a GSM\r\n");
+
+	Usart1Mode (USART_GSM_MODE);
+
+
+	//Pruebo USART1
+//	while (1)
+//	{
+//			Usart1SendUnsigned((unsigned char *) (const char *) "Test OK\r\n", sizeof("Test OK\r\n"));
+//			Wait_ms(50);
+//	}
+
+
+	//mando start al gsm
+	Usart2Send((char *) (const char *) "Reset y Start GSM\r\n");
+	//GPSStartResetSM ();
+	timer_standby = 60000;		//doy 1 minuto para prender modulo
+	while (timer_standby)
+	{
+		if (GSM_Start() == 2)
+		{
+			Usart2Send((char *) (const char *) "Start OK\r\n");
+			timer_standby = 0;
+		}
+
+		if (GSM_Start() == 4)
+			Usart2Send((char *) (const char *) "Start NOK\r\n");
+	}
+
+	//mando conf al gsm
+	Usart2Send((char *) (const char *) "Config al GSM\r\n");
+	//GPSConfigResetSM ();
+	while (GSM_Config(150) != 2)
+	{
+		GSMProcess();
+		//GSMReceive (&AlertasReportar[0], (char *)&USERCODE[0], &claveAct[0], &ActDact);
+		GSMReceive ();
+		if (gsm_pckt_ready)
+		{
+			gsm_pckt_ready = 0;
+			Usart2SendUnsigned(buffUARTGSMrx2, gsm_pckt_bytes);
+		}
+	}
+
+	while( 1 )
+	{
+		if (gsm_pckt_ready)
+		{
+			gsm_pckt_ready = 0;
+			Usart2SendUnsigned(buffUARTGSMrx2, gsm_pckt_bytes);
+		}
+
+		GSMProcess();
+	}
+#endif
 
 	//---------- Fin Prueba con GPS --------//
 
@@ -668,8 +751,16 @@ void TimingDelay_Decrement(void)
 	SysTickIntHandler();
 #endif
 
+#if (defined USE_GPS) || (defined USE_GSM)
+	if (usart1_mini_timeout)
+		usart1_mini_timeout--;
+#endif
 #ifdef USE_GPS
 	GPSTimeoutCounters ();
+#endif
+
+#ifdef USE_GSM
+	GSMTimeoutCounters ();
 #endif
 }
 

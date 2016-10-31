@@ -28,13 +28,8 @@ unsigned char gps_buff [SIZEOF_GPSBUFF];
 unsigned char str_conf1 [] = One_Output_Ten_Secs_String_Cmd;
 //unsigned char str_conf1 [] = One_Output_One_Secs_String_Cmd;
 
-//unsigned char str_conf2 [] = Disable_GPRMC_String_Cmd;
-//unsigned char str_conf3 [] = Disable_GPVTG_String_Cmd;
-//unsigned char str_conf4 [] = Disable_GPGGA_String_Cmd;
-////unsigned char str_conf5 [] = Disable_GPGSA_String_Cmd;
-//unsigned char str_conf5 [] = Enable_GPGSA_String_Cmd;
-//unsigned char str_conf6 [] = Disable_GPGSV_String_Cmd;
 
+//--- PRUEBA ALL ENABLE ---//
 //unsigned char str_conf2 [] = Enable_GPDTM_String_Cmd;
 //unsigned char str_conf3 [] = Enable_GPGBS_String_Cmd;
 //unsigned char str_conf4 [] = Enable_GPGGA_String_Cmd;
@@ -49,6 +44,7 @@ unsigned char str_conf1 [] = One_Output_Ten_Secs_String_Cmd;
 //
 //unsigned char str_conf12 [] = Enable_GPZDA_String_Cmd;
 
+//--- PRUEBA SOLO GPGLL ENABLE ---//
 unsigned char str_conf2 [] = Disable_GPDTM_String_Cmd;
 unsigned char str_conf3 [] = Disable_GPGBS_String_Cmd;
 unsigned char str_conf4 [] = Disable_GPGGA_String_Cmd;
@@ -63,9 +59,6 @@ unsigned char str_conf11 [] = Disable_GPVTG_String_Cmd;
 
 unsigned char str_conf12 [] = Disable_GPZDA_String_Cmd;
 
-//unsigned char str_conf5 [] = Disable_GPDTM_String_Cmd;
-//unsigned char str_conf6 [] = Disable_GPGBS_String_Cmd;
-//unsigned char str_conf7 [] = Disable_GPGGA_String_Cmd;
 unsigned char str_factory [] = Set_Factory_String_Cmd;
 unsigned char str_save [] = Save_Changes_String_Cmd;
 
@@ -123,9 +116,9 @@ void GPSTimeoutCounters (void)
 	if (gps_timeout)
 		gps_timeout--;
 
-	if (gps_mini_timeout)
-		gps_mini_timeout--;
-
+//	if (gps_mini_timeout)	//descuenta general
+//		gps_mini_timeout--;
+//
 }
 
 void GPSProcess (void)

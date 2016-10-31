@@ -4,7 +4,8 @@
 #include "hard.h"
 #include "stm32f0xx.h"
 
-#define buffUARTGSMrx_dimension 512
+//#define buffUARTGSMrx_dimension 512
+#define buffUARTGSMrx_dimension 255
 
 //--- Definicion de pines de hardware, los que no se conecten en la placa utilizar 1 (o lo que corresponda)
 //--- se relacionanan con los nombres de hard.h
@@ -32,9 +33,10 @@
 //#define LED_NETLIGHT_OFF 	asm ("nop \n\t")
 
 //--- Module Function Declaration ---//
-char GSM_Start(void);
+unsigned char GSM_Start(void);
 void GSM_Stop(void);
-void GSMReceive (unsigned char * pAlertasReportar, char * puserCode, unsigned char * pclaveAct, unsigned char * pActDact);
+void GSMReceive (void);
+//void GSMReceive (unsigned char * pAlertasReportar, char * puserCode, unsigned char * pclaveAct, unsigned char * pActDact);
 char GSMSendCommand (char *ptrCommand, unsigned char timeOut, unsigned char rta,char *ptrRta);
 char GSM_Config(unsigned char timeOut);
 char GSMSendSMS (char *ptrMSG, char *ptrNUM, unsigned char timeOut, char sim);
@@ -47,5 +49,9 @@ void GSMPrestador(unsigned char * pGSMHWstatus, unsigned char * prestadorSim1, u
 void GSMrxSMS(unsigned char * pAlertasReportar, char * puserCode, unsigned char * pclaveAct, unsigned char * pActDact, char * pGSMReadSMStel);
 char GSMCloseIP(void);
 char GSMConfigPDPGPRS (char sim, char *ptrAPN, char *ptrUSER, char *ptrKEY , char *ptrIPAdd, char *ptrIPremote, char *ptrPORTremote,unsigned char timeOut);
+
+
+void GSMProcess (void);
+#define UARTGSMSend(X)	Usart1Send(X)
 
 #endif

@@ -43,8 +43,9 @@ typedef enum  {
 
 } GPSState;
 
-//--- Timeouts del GPS ---//
+//--- Timeouts del GPS y del GSM ---//
 #define TT_GPS_MINI		5
+#define TT_GSM_MINI		5
 
 #define SIZEOF_GPSBUFF	128
 
