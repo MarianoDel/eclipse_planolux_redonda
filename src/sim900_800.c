@@ -120,7 +120,12 @@ extern unsigned char usart1_pckt_bytes;
 #define gsm_have_data		usart1_have_data
 #define gsm_pckt_bytes		usart1_pckt_bytes
 
-
+#ifdef USE_GSM_GATEWAY
+extern volatile unsigned char usart2_mini_timeout;
+extern volatile unsigned char usart2_pckt_ready;
+extern volatile unsigned char usart2_have_data;
+extern unsigned char usart2_pckt_bytes;
+#endif
 //TODO: reimplementar esto
 //void UARTGSM_Config(void)
 //{
@@ -214,6 +219,15 @@ void GSMProcess (void)
 		PacketReadyUARTGSM = 1;
 //		GSMReceive (unsigned char * pAlertasReportar, char * puserCode, unsigned char * pclaveAct, unsigned char * pActDact);
 	}
+
+#ifdef USE_GSM_GATEWAY
+	if ((usart2_have_data) && (!usart2_mini_timeout))
+	{
+		usart2_have_data = 0;
+		usart2_pckt_ready = 1;
+		usart2_pckt_bytes = ReadUsart2Buffer((unsigned char *) buffUARTGSMrx2, sizeof(buffUARTGSMrx2));
+	}
+#endif
 }
 
 

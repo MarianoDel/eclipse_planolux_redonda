@@ -50,7 +50,7 @@
 #endif
 
 //Para Hardware de GSM
-#ifdef USE_GSM
+#if (defined USE_GSM) || (defined USE_GSM_GATEWAY)
 #include "sim900_800.h"
 #endif
 
@@ -117,16 +117,21 @@ unsigned char gps_buff [SIZEOF_GPSBUFF];
 #endif
 
 // ------- Externals del GSM -------
-#ifdef USE_GSM
+#if (defined USE_GSM) || (defined USE_GSM_GATEWAY)
 #define gsm_mini_timeout	usart1_mini_timeout
 #define gsm_pckt_ready		usart1_pckt_ready
 #define gsm_have_data		usart1_have_data
 #define gsm_pckt_bytes		usart1_pckt_bytes
 
-unsigned char AlertasReportar[5] = {0,0,0,0,0};
-unsigned char ActDact = 0;
-unsigned char claveAct[5] = {0,0,0,0,0};
-volatile char USERCODE[8] = "123456";
+volatile unsigned char usart2_mini_timeout;
+volatile unsigned char usart2_pckt_ready;
+volatile unsigned char usart2_have_data;
+unsigned char usart2_pckt_bytes;
+
+//unsigned char AlertasReportar[5] = {0,0,0,0,0};
+//unsigned char ActDact = 0;
+//unsigned char claveAct[5] = {0,0,0,0,0};
+//volatile char USERCODE[8] = "123456";
 extern volatile char buffUARTGSMrx2[];
 #endif
 
@@ -448,7 +453,55 @@ int main(void)
 	}
 #endif
 
-	//---------- Fin Prueba con GPS --------//
+	//---------- Pruebas con GSM GATEWAY --------//
+#ifdef USE_GSM_GATEWAY
+	Usart2Send((char *) (const char *) "GSM GATEWAY.. Cambio a GSM\r\n");
+
+	Usart1Mode (USART_GSM_MODE);
+
+
+	//mando start al gsm
+	Usart2Send((char *) (const char *) "Reset y Start GSM\r\n");
+	//GPSStartResetSM ();
+	timer_standby = 60000;		//doy 1 minuto para prender modulo
+	while (timer_standby)
+	{
+		if (GSM_Start() == 2)
+		{
+			Usart2Send((char *) (const char *) "Start OK\r\n");
+			timer_standby = 0;
+		}
+
+		if (GSM_Start() == 4)
+			Usart2Send((char *) (const char *) "Start NOK\r\n");
+	}
+
+	Usart2Send((char *) (const char *) "GSM GATEWAY Listo para empezar\r\n");
+
+	while (1)
+	{
+		GSMProcess();
+
+		if (usart2_pckt_ready)	//deja paquete en buffUARTGSMrx2
+		{
+			usart2_pckt_ready = 0;
+			Usart1SendUnsigned(buffUARTGSMrx2, usart2_pckt_bytes);
+		}
+
+		if (gsm_pckt_ready)		//deja paquete en buffUARTGSMrx2
+		{
+			gsm_pckt_ready = 0;
+			Usart2SendUnsigned(buffUARTGSMrx2, gsm_pckt_bytes);
+		}
+
+		if (LIGHT)
+			LED_ON;
+		else
+			LED_OFF;
+	}
+#endif
+
+	//---------- Fin Prueba con GSM GATEWAY --------//
 
 
 
@@ -773,15 +826,17 @@ void TimingDelay_Decrement(void)
 	SysTickIntHandler();
 #endif
 
-#if (defined USE_GPS) || (defined USE_GSM)
+#if (defined USE_GPS) || (defined USE_GSM) || (defined USE_GSM_GATEWAY)
 	if (usart1_mini_timeout)
 		usart1_mini_timeout--;
+	if (usart2_mini_timeout)
+		usart2_mini_timeout--;
 #endif
 #ifdef USE_GPS
 	GPSTimeoutCounters ();
 #endif
 
-#ifdef USE_GSM
+#if (defined USE_GSM) || (defined USE_GSM_GATEWAY)
 	GSMTimeoutCounters ();
 #endif
 }

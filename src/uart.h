@@ -44,7 +44,7 @@
 //--- Exported functions ---//
 unsigned char Usart1Mode (unsigned char );
 unsigned char ReadUsart1Buffer (unsigned char *, unsigned short);
-
+unsigned char ReadUsart2Buffer (unsigned char *, unsigned short);
 
 void USART1Config(void);
 void USART1_IRQHandler(void);

@@ -40,6 +40,11 @@ extern volatile unsigned char usart1_mini_timeout;
 extern volatile unsigned char usart1_pckt_ready;
 extern volatile unsigned char usart1_have_data;
 
+#ifdef USE_GSM_GATEWAY
+extern volatile unsigned char usart2_mini_timeout;
+extern volatile unsigned char usart2_pckt_ready;
+extern volatile unsigned char usart2_have_data;
+#endif
 
 //#define data512		data1		//en rx es la trama recibida; en tx es la trama a enviar
 //#define data256		data		//en rx son los valores del channel elegido
@@ -58,6 +63,7 @@ volatile unsigned char * prx1;
 
 volatile unsigned char * ptx2;
 volatile unsigned char * ptx2_pckt_index;
+volatile unsigned char * prx2;
 
 volatile unsigned char pckt_gps_ready = 0;
 volatile unsigned char usart_mode = USART_GPS_MODE;
@@ -217,6 +223,15 @@ void USART2_IRQHandler(void)
 		//RX WIFI
 		dummy = USART2->RDR & 0x0FF;
 
+#ifdef USE_GSM_GATEWAY
+		if (prx2 < &rx2buff[SIZEOF_DATA])
+		{
+			*prx2 = dummy;
+			prx2++;
+			usart2_have_data = 1;
+		}
+			usart2_mini_timeout = TT_GPS_MINI;
+#endif
 
 	}
 
@@ -270,6 +285,26 @@ void Usart2SendSingle(unsigned char tosend)
 	Usart2SendUnsigned(&tosend, 1);
 }
 
+unsigned char ReadUsart2Buffer (unsigned char * bout, unsigned short max_len)
+{
+	unsigned int len;
+
+	len = prx2 - rx2buff;
+
+	if (len < max_len)
+		memcpy(bout, (unsigned char *) rx2buff, len);
+	else
+	{
+		memcpy(bout, (unsigned char *) rx2buff, len);
+		len = max_len;
+	}
+
+	//ajusto punteros de rx luego de la copia
+	prx2 = rx2buff;
+
+	return (unsigned char) len;
+}
+
 void Usart1Send (char * send)
 {
 	unsigned char i;
@@ -303,7 +338,7 @@ void USART2Config(void)
 
 	ptx2 = tx2buff;
 	ptx2_pckt_index = tx2buff;
-	//prx2 = rx2buff;
+	prx2 = rx2buff;
 
 	USART2->BRR = USART_115200;
 	USART2->CR1 = USART_CR1_RXNEIE | USART_CR1_RE | USART_CR1_TE | USART_CR1_UE;

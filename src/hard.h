@@ -17,7 +17,8 @@
 //-------- Type of Program ----------------
 //#define USE_MQTT_LIB
 //#define USE_GPS
-#define USE_GSM
+//#define USE_GSM
+#define USE_GSM_GATEWAY
 
 //#define WIFI_TO_MQTT_BROKER
 //#define USE_CERT_PROGRAM
