@@ -68,8 +68,9 @@ void GPIO_Config (void)
 
 	temp = GPIOA->MODER;	//2 bits por pin
 	temp &= 0x3C030000;		//PA0 - PA1 analog input; PA2 - PA3 alternate function; PA4 - PA5 input; PA6 alternate function; PA7 out open drain;
-	temp |= 0x416860AF;		//PA9 PA10 alternative; PA11 PA12 PA15 out push_pull
+//	temp |= 0x416860AF;		//PA9 PA10 alternative; PA11 PA12 PA15 out push_pull
 //	temp |= 0x4168606F;		//pruebo pin3
+	temp |= 0x416860A3;		//PA1 input para pruebas
 	GPIOA->MODER = temp;
 
 	temp = GPIOA->OTYPER;	//1 bit por pin
@@ -84,8 +85,8 @@ void GPIO_Config (void)
 	GPIOA->OSPEEDR = temp;
 
 	temp = GPIOA->PUPDR;	//2 bits por pin
-	temp &= 0xFFFFFFFF;
-	temp |= 0x00000000;
+	temp &= 0xFFFFFFF3;
+	temp |= 0x00000008;		//pull down pin1 para pruebas
 	GPIOA->PUPDR = temp;
 
 

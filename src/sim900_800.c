@@ -27,22 +27,22 @@ volatile unsigned short GSMStartTime;
 //GSM SendCommand.
 char GSMSendCommandState = 0;
 char GSMSendCommandFlag = 0;
-volatile unsigned char GSMSendCommandTimeOut;
+volatile unsigned short GSMSendCommandTimeOut;
 char GSMSendCommandIntento = 0;
 
 //GSM SendSMS
 char GSMSendSMSState = 0;
 char GSMSendSMSFlag = 0;
-volatile unsigned char GSMSendSMSTimeOut;
+volatile unsigned short GSMSendSMSTimeOut;
 char GSMSendSMSbuffAux[32];
 
 //GSM Config.
 char GSMConfigState = 0;
-volatile unsigned char GSMConfigTimeOut;
-volatile unsigned char GSMConfigTime;
+volatile unsigned short GSMConfigTimeOut;
+volatile unsigned short GSMConfigTime;
 
 //GPRS Config.
-unsigned char GSMConfigGPRSTimeOut;
+unsigned short GSMConfigGPRSTimeOut;
 char GSMConfigGPRSState = 0;
 char GSMConfigGPRSflag = 0;
 char GSMbuffStatus[32];
@@ -53,7 +53,7 @@ unsigned char GPRSrssi = 99;
 //GSM SendIP
 char GSMSendIPState = 0;
 char GSMSendIPFlag = 0;
-volatile unsigned char GSMSendIPTimeOut;
+volatile unsigned short GSMSendIPTimeOut;
 char GSMSendIPbuffAux[32];
 
 char GSMbuffRtaCommand[buffUARTGSMrx_dimension];
@@ -351,6 +351,7 @@ void GSM_Stop(void)
 
 	GSM_PWRKEY_ON;
 }
+
 //GSMPrestador(&PrestadorSim1, &PrestadorSim2, &CONFIGURACIONgprsAPN1[0], &CONFIGURACIONgprsUsuario1[0], &CONFIGURACIONgprsClave1[0], &CONFIGURACIONgprsProveedor1[0], &CONFIGURACIONgprsAPN2[0], &CONFIGURACIONgprsUsuario2[0], &CONFIGURACIONgprsClave2[0], &CONFIGURACIONgprsProveedor2[0])
 void GSMPrestador(unsigned char * pGSMHWstatus, unsigned char * prestadorSim1, unsigned char * prestadorSim2, char * pCONFIGURACIONgprsAPN1, char * pCONFIGURACIONgprsUsuario1, char * pCONFIGURACIONgprsClave1, char * pCONFIGURACIONgprsProveedor1, char * pCONFIGURACIONgprsAPN2, char * pCONFIGURACIONgprsUsuario2, char * pCONFIGURACIONgprsClave2, char * pCONFIGURACIONgprsProveedor2, char * pCONFIGURACIONIPREMOTE, char * pCONFIGURACIONPORTREMOTE)
 {
@@ -373,7 +374,16 @@ void GSMPrestador(unsigned char * pGSMHWstatus, unsigned char * prestadorSim1, u
 						prestadorSimState++;
 						break;
 					case 1:
+
 						i = GSM_SetSIM (1);
+						if (i == 2)
+							prestadorSimState++;
+						if (i > 2)
+						{
+							prestadorSimState = 0;
+							//prestadorSimTime = 150;
+							prestadorSimSelect++;
+						}
 
 						if (i == 2)
 							prestadorSimState++;
@@ -581,9 +591,6 @@ void GSMReceive (void)
 	//---- Comunicacion con modulo GSM ----//
 	if (PacketReadyUARTGSM)
 	{
-
-//		UARTDBGSend((char *)&buffUARTGSMrx2[0]);
-
 		if (GSMSendCommandFlag)
 		{
 
@@ -595,13 +602,17 @@ void GSMReceive (void)
 			{
 				if(!strncmp((const char *)&buffUARTGSMrx2[0], (const char *)&GSM_SENDOK[0], strlen((const char *)&GSM_SENDOK[0])))
 					GSMSendCommandFlag = 4;
-				if(!strncmp((const char *)&buffUARTGSMrx2[0], (const char *)&GSM_OK[0], strlen((const char *)&GSM_OK[0])))
-					GSMSendCommandFlag = 4;
+//				if(!strncmp((const char *)&buffUARTGSMrx2[0], (const char *)&GSM_OK[0], strlen((const char *)&GSM_OK[0])))
+//					GSMSendCommandFlag = 4;
 				if(!strncmp((const char *)&buffUARTGSMrx2[0], (const char *)"SHUT OK", strlen((const char *)"SHUT OK")))
 									GSMSendCommandFlag = 4;
 				if(!strncmp((const char *)&buffUARTGSMrx2[0], (const char *)"000: ACK", sizeof("000: ACK") - 1))
 					GSMSendCommandFlag = 4;
 				if(buffUARTGSMrx2[0] == '>')
+					GSMSendCommandFlag = 4;
+				if(!strncmp((const char *)&buffUARTGSMrx2[0], (const char *)"AT\r\r\nOK\r\n", sizeof "AT\r\r\nOK\r\n"))
+					GSMSendCommandFlag = 4;
+				if(!strncmp((const char *)&buffUARTGSMrx2[0], (const char *)"\r\nOK\r\n", sizeof "\r\nOK\r\n"))
 					GSMSendCommandFlag = 4;
 			}
 
@@ -610,7 +621,8 @@ void GSMReceive (void)
 
 
 
-			if(!strncmp((const char *)&buffUARTGSMrx2[0], (const char *)&GSM_ERR[0], strlen((const char *)&GSM_ERR[0])))
+//			if(!strncmp((const char *)&buffUARTGSMrx2[0], (const char *)&GSM_ERR[0], strlen((const char *)&GSM_ERR[0])))
+			if(!strncmp((const char *)&buffUARTGSMrx2[0], (const char *) "\r\nERROR\r\n", sizeof("\r\nERROR\r\n")))
 			{
 				GSMSendCommandFlag = 5;
 			}
@@ -734,7 +746,7 @@ void GSMReceive (void)
 //NO OK:	4
 //NO RTA: 	5
 //----------------------------------------------------//
-char GSMSendCommand (char *ptrCommand, unsigned char timeOut, unsigned char rta, char *ptrRta)
+char GSMSendCommand (char *ptrCommand, unsigned short timeOut, unsigned char rta, char *ptrRta)
 {
 
 	switch(GSMSendCommandState)
@@ -765,10 +777,6 @@ char GSMSendCommand (char *ptrCommand, unsigned char timeOut, unsigned char rta,
 			}
 			else
 			{
-				//UARTGSMSend("\r");
-				//Debug.
-				//UARTDBGSend(&ptrCommand[0]);
-				//Envio de comando.
 				UARTGSMSend(&ptrCommand[0]);
 			}
 			break;
@@ -802,11 +810,6 @@ char GSMSendCommand (char *ptrCommand, unsigned char timeOut, unsigned char rta,
 
 	if (GSMSendCommandFlag == 5)
 	{
-		//ERROR recibido.
-		//Debug.
-		//UARTDBGSend("\r");
-		//Envio de comando.
-		//UARTGSMSend("\r");
 		GSMSendCommandIntento++;
 		GSMSendCommandTimeOut = timeOut;
 		GSMSendCommandState = 1;
@@ -814,10 +817,6 @@ char GSMSendCommand (char *ptrCommand, unsigned char timeOut, unsigned char rta,
 
 	if (!GSMSendCommandTimeOut)
 	{
-		//Debug.
-		//UARTDBGSend("\r");
-		//Envio de comando.
-		//UARTGSMSend("\r");
 		GSMSendCommandIntento++;
 		GSMSendCommandTimeOut = timeOut;
 		GSMSendCommandState = 1;
@@ -835,7 +834,7 @@ char GSMSendCommand (char *ptrCommand, unsigned char timeOut, unsigned char rta,
 //ERR:		3
 //TO:		4
 //---------------------------------------------------------------//
-char GSM_Config(unsigned char timeOut)
+char GSM_Config(unsigned short timeOut)
 {
 	unsigned char i;
 
@@ -853,7 +852,8 @@ char GSM_Config(unsigned char timeOut)
 
 			if (GSM_STATUS)
 			{
-				i = GSMSendCommand ("AT\r\n", 15, 0, &GSMbuffRtaCommand[0]);
+				//i = GSMSendCommand ("AT\r\n", 15, 0, &GSMbuffRtaCommand[0]);
+				i = GSMSendCommand ("AT\r\n", GSMConfigTimeOut, 0, &GSMbuffRtaCommand[0]);
 
 				if ((i == 2) || (i == 3))
 				{
@@ -913,7 +913,8 @@ char GSM_Config(unsigned char timeOut)
 
 			//Comandos para configurar.
 			//ATE0.
-			i = GSMSendCommand ("ATE0\r\n", 15, 0, &GSMbuffRtaCommand[0]);
+			//i = GSMSendCommand ("ATE0\r\n", 15, 0, &GSMbuffRtaCommand[0]);
+			i = GSMSendCommand ("ATE0\r\n", GSMConfigTimeOut, 0, &GSMbuffRtaCommand[0]);
 
 			if (i == 2)
 			{
@@ -929,7 +930,8 @@ char GSM_Config(unsigned char timeOut)
 
 		case 6:
 			//AT+CMGF=1
-			i = GSMSendCommand ("AT+CMGF=1\r\n", 15, 0, &GSMbuffRtaCommand[0]);
+			//i = GSMSendCommand ("AT+CMGF=1\r\n", 15, 0, &GSMbuffRtaCommand[0]);
+			i = GSMSendCommand ("AT+CMGF=1\r\n", GSMConfigTimeOut, 0, &GSMbuffRtaCommand[0]);
 
 			if (i == 2)
 			{
@@ -943,7 +945,8 @@ char GSM_Config(unsigned char timeOut)
 			break;
 		case 7:
 			//AT+CMGF=1
-			i = GSMSendCommand ("AT+CSCS=\"GSM\"\r\n", 15, 0, &GSMbuffRtaCommand[0]);
+			//i = GSMSendCommand ("AT+CSCS=\"GSM\"\r\n", 15, 0, &GSMbuffRtaCommand[0]);
+			i = GSMSendCommand ("AT+CSCS=\"GSM\"\r\n", GSMConfigTimeOut, 0, &GSMbuffRtaCommand[0]);
 
 			if (i == 2)
 			{
@@ -957,7 +960,8 @@ char GSM_Config(unsigned char timeOut)
 			break;
 		case 8:
 			//AT+CMGF=1
-			i = GSMSendCommand ("AT+CSMP=49,255,0,241\r\n", 15, 0, &GSMbuffRtaCommand[0]);
+			//i = GSMSendCommand ("AT+CSMP=49,255,0,241\r\n", 15, 0, &GSMbuffRtaCommand[0]);
+			i = GSMSendCommand ("AT+CSMP=49,255,0,241\r\n", GSMConfigTimeOut, 0, &GSMbuffRtaCommand[0]);
 
 			if (i == 2)
 			{
@@ -971,7 +975,8 @@ char GSM_Config(unsigned char timeOut)
 			break;
 		case 9:
 
-			i = GSMSendCommand ("AT&W\r\n", 15, 0, &GSMbuffRtaCommand[0]);
+			//i = GSMSendCommand ("AT&W\r\n", 15, 0, &GSMbuffRtaCommand[0]);
+			i = GSMSendCommand ("AT&W\r\n", GSMConfigTimeOut, 0, &GSMbuffRtaCommand[0]);
 
 			if (i == 2)
 			{
@@ -1010,7 +1015,7 @@ char GSM_Config(unsigned char timeOut)
 //ERR:		3
 //TO:		4
 //-----------------------------------------------------------------------//
-char GSMSendSMS (char *ptrMSG, char *ptrNUM, unsigned char timeOut, char sim)
+char GSMSendSMS (char *ptrMSG, char *ptrNUM, unsigned short timeOut, char sim)
 {
 	unsigned char i;
 
@@ -1113,7 +1118,7 @@ char GSMSendSMS (char *ptrMSG, char *ptrNUM, unsigned char timeOut, char sim)
 //TO:			4
 //NO SIGNAL:	20
 //-----------------------------------------------------------------------//
-char GSMConfigGPRS (char sim, char *ptrAPN, char *ptrUSER, char *ptrKEY , char *ptrIPAdd, char *ptrIPremote, char *ptrPORTremote,unsigned char timeOut)
+char GSMConfigGPRS (char sim, char *ptrAPN, char *ptrUSER, char *ptrKEY , char *ptrIPAdd, char *ptrIPremote, char *ptrPORTremote,unsigned short timeOut)
 {
 	unsigned char i;
 
@@ -1531,7 +1536,7 @@ char GSM_SetSIM (unsigned char sim)
 	return 1;
 }
 
-char GSMSendIP (char *ptrMSG, unsigned char timeOut)
+char GSMSendIP (char *ptrMSG, unsigned short timeOut)
 {
 	unsigned char i;
 
@@ -1968,7 +1973,7 @@ void GSMrxSMS(unsigned char * pAlertasReportar, char * puserCode, unsigned char 
 	}
 }
 
-char GSMConfigPDPGPRS (char sim, char *ptrAPN, char *ptrUSER, char *ptrKEY , char *ptrIPAdd, char *ptrIPremote, char *ptrPORTremote,unsigned char timeOut)
+char GSMConfigPDPGPRS (char sim, char *ptrAPN, char *ptrUSER, char *ptrKEY , char *ptrIPAdd, char *ptrIPremote, char *ptrPORTremote,unsigned short timeOut)
 {
 	unsigned char i;
 

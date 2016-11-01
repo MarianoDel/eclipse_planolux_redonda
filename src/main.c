@@ -402,17 +402,35 @@ int main(void)
 	//mando conf al gsm
 	Usart2Send((char *) (const char *) "Config al GSM\r\n");
 	//GPSConfigResetSM ();
-	while (GSM_Config(150) != 2)
+
+	i = 0;
+	while (i == 0)
 	{
+		ii = GSM_Config(1000);
+
+		if (ii == 2)
+			i = 0;
+		else if (ii > 2)
+		{
+			Usart2Send((const char*) "Error en configuracion\r\n");
+			while (1);
+		}
+
 		GSMProcess();
-		//GSMReceive (&AlertasReportar[0], (char *)&USERCODE[0], &claveAct[0], &ActDact);
 		GSMReceive ();
+
 		if (gsm_pckt_ready)
 		{
 			gsm_pckt_ready = 0;
 			Usart2SendUnsigned(buffUARTGSMrx2, gsm_pckt_bytes);
 		}
+
+		if (LIGHT)
+			LED_ON;
+		else
+			LED_OFF;
 	}
+
 
 	while( 1 )
 	{
@@ -423,6 +441,10 @@ int main(void)
 		}
 
 		GSMProcess();
+
+		if (LIGHT)
+			LED_ON;
+
 	}
 #endif
 

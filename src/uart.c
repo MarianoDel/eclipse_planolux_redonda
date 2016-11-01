@@ -126,7 +126,7 @@ unsigned char Usart1Mode (unsigned char new_mode)
 	return usart_mode;
 }
 
-unsigned char ReadUsart1Buffer (unsigned char * bout, unsigned char max_len)
+unsigned char ReadUsart1Buffer (unsigned char * bout, unsigned short max_len)
 {
 	unsigned int len;
 

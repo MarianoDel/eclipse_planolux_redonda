@@ -43,7 +43,7 @@
 
 //--- Exported functions ---//
 unsigned char Usart1Mode (unsigned char );
-unsigned char ReadUsart1Buffer (unsigned char *, unsigned char);
+unsigned char ReadUsart1Buffer (unsigned char *, unsigned short);
 
 
 void USART1Config(void);

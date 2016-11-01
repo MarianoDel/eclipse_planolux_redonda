@@ -28,6 +28,7 @@
 #ifdef VER_1_0
 //GPIOA pin0	V_Sense
 //GPIOA pin1	Light_Sense
+#define LIGHT ((GPIOA->IDR & 0x0002) != 0)
 
 //GPIOA pin2
 //GPIOA pin3	usart2 tx rx (para debug)
