@@ -10,6 +10,11 @@
 #include "uart.h"
 
 
+#define gps_mini_timeout	usart1_mini_timeout
+#define gps_pckt_ready		usart1_pckt_ready
+#define gps_have_data		usart1_have_data
+#define gps_pckt_bytes		usart1_pckt_bytes
+
 //--- Externals variables ---//
 extern volatile unsigned char gps_mini_timeout;
 extern volatile unsigned char gps_pckt_ready;

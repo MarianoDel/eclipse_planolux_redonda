@@ -114,6 +114,11 @@ unsigned char usart1_pckt_bytes;
 
 #ifdef USE_GPS
 unsigned char gps_buff [SIZEOF_GPSBUFF];
+volatile unsigned char usart2_mini_timeout;
+volatile unsigned char usart2_pckt_ready;
+volatile unsigned char usart2_have_data;
+unsigned char usart2_pckt_bytes;
+
 #endif
 
 // ------- Externals del GSM -------
@@ -292,6 +297,9 @@ int main(void)
 
 	//--- Welcome code ---//
 	LED_OFF;
+//	EN_GPS_OFF;
+	EN_GPS_ON;
+	RELAY_ON;
 
 	USART1Config();
 	USART2Config();
@@ -394,13 +402,14 @@ int main(void)
 	timer_standby = 60000;		//doy 1 minuto para prender modulo
 	while (timer_standby)
 	{
-		if (GSM_Start() == 2)
+		i = GSM_Start();
+		if (i == 2)
 		{
 			Usart2Send((char *) (const char *) "Start OK\r\n");
 			timer_standby = 0;
 		}
 
-		if (GSM_Start() == 4)
+		if (i == 4)
 			Usart2Send((char *) (const char *) "Start NOK\r\n");
 	}
 
@@ -466,13 +475,15 @@ int main(void)
 	timer_standby = 60000;		//doy 1 minuto para prender modulo
 	while (timer_standby)
 	{
-		if (GSM_Start() == 2)
+		i = GSM_Start();
+		if (i == 2)
 		{
 			Usart2Send((char *) (const char *) "Start OK\r\n");
 			timer_standby = 0;
 		}
+		else
 
-		if (GSM_Start() == 4)
+		if (i == 4)
 			Usart2Send((char *) (const char *) "Start NOK\r\n");
 	}
 
