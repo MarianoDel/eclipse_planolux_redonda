@@ -12,7 +12,7 @@
 //----------- Defines For Configuration -------------
 //----------- Hardware Board Version -------------
 #define VER_1_0
-
+#define VER_1_1		//mismo pinout que VER_1_0
 
 //-------- Type of Program ----------------
 //#define USE_MQTT_LIB
@@ -43,13 +43,16 @@
 //GPIOA pin5
 #define STATUS		((GPIOA->IDR & 0x0020) != 0)
 
-//GPIOA pin6
-//para PWM_CH1
+//GPIOA pin6	para PWM_CH1
 
 //GPIOA pin7
 #define PWRKEY ((GPIOA->ODR & 0x0080) != 0)
 #define PWRKEY_ON	GPIOA->BSRR = 0x00000080
 #define PWRKEY_OFF GPIOA->BSRR = 0x00800000
+
+//GPIOB pin0 I_Sense
+
+//GPIOB pin1
 
 //GPIOA pin8
 
@@ -74,9 +77,6 @@
 #define EN_GPS_ON	GPIOA->BSRR = 0x00008000
 #define EN_GPS_OFF	GPIOA->BSRR = 0x80000000
 
-//GPIOB pin0 I_Sense
-
-//GPIOB pin1
 
 //GPIOB pin3
 #define PPS ((GPIOB->IDR & 0x0008) == 0)

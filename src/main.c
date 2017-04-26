@@ -300,6 +300,7 @@ int main(void)
 //	EN_GPS_OFF;
 	EN_GPS_ON;
 	RELAY_ON;
+	//RELAY_OFF;
 
 	USART1Config();
 	USART2Config();
@@ -464,6 +465,18 @@ int main(void)
 
 	//---------- Pruebas con GSM GATEWAY --------//
 #ifdef USE_GSM_GATEWAY
+	LED_OFF;
+	for (i = 0; i < 6; i++)
+	{
+		if (LED)
+			LED_OFF;
+		else
+			LED_ON;
+
+		Wait_ms (300);
+	}
+	Wait_ms (3000);
+
 	Usart2Send((char *) (const char *) "GSM GATEWAY.. Cambio a GSM\r\n");
 
 	Usart1Mode (USART_GSM_MODE);
@@ -496,13 +509,13 @@ int main(void)
 		if (usart2_pckt_ready)	//deja paquete en buffUARTGSMrx2
 		{
 			usart2_pckt_ready = 0;
-			Usart1SendUnsigned(buffUARTGSMrx2, usart2_pckt_bytes);
+			Usart1SendUnsigned((unsigned char *) buffUARTGSMrx2, usart2_pckt_bytes);
 		}
 
 		if (gsm_pckt_ready)		//deja paquete en buffUARTGSMrx2
 		{
 			gsm_pckt_ready = 0;
-			Usart2SendUnsigned(buffUARTGSMrx2, gsm_pckt_bytes);
+			Usart2SendUnsigned((unsigned char *) buffUARTGSMrx2, gsm_pckt_bytes);
 		}
 
 		if (LIGHT)
