@@ -958,7 +958,7 @@ char GSM_Config(unsigned short timeOut)
 			}
 			break;
 		case 7:
-			//AT+CMGF=1
+			//AT+CSCS="GSM"
 			//i = GSMSendCommand ("AT+CSCS=\"GSM\"\r\n", 15, 0, &GSMbuffRtaCommand[0]);
 			i = GSMSendCommand ("AT+CSCS=\"GSM\"\r\n", GSMConfigTimeOut, 0, &GSMbuffRtaCommand[0]);
 
@@ -973,7 +973,7 @@ char GSM_Config(unsigned short timeOut)
 			}
 			break;
 		case 8:
-			//AT+CMGF=1
+			//AT+CSMP=49,255,0,241
 			//i = GSMSendCommand ("AT+CSMP=49,255,0,241\r\n", 15, 0, &GSMbuffRtaCommand[0]);
 			i = GSMSendCommand ("AT+CSMP=49,255,0,241\r\n", GSMConfigTimeOut, 0, &GSMbuffRtaCommand[0]);
 
@@ -988,7 +988,7 @@ char GSM_Config(unsigned short timeOut)
 			}
 			break;
 		case 9:
-
+			//AT&W
 			//i = GSMSendCommand ("AT&W\r\n", 15, 0, &GSMbuffRtaCommand[0]);
 			i = GSMSendCommand ("AT&W\r\n", GSMConfigTimeOut, 0, &GSMbuffRtaCommand[0]);
 
